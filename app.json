@@ -4,12 +4,23 @@
     "slug": "BavarianTranslator",
     "version": "1.0.0",
     "orientation": "portrait",
+    "scheme": "bavariantranslator",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.marcushsu.bavariantranslator",
+      "infoPlist": {
+        "UIBackgroundModes": [
+          "audio"
+        ]
+      }
     },
     "android": {
+      "package": "com.marcushsu.bavariantranslator",
+      "permissions": [
+        "android.permission.RECORD_AUDIO"
+      ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
@@ -20,6 +31,15 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-audio",
+        {
+          "microphonePermission": "Allow BavarianTranslator to use the microphone so it can hear and translate your conversation."
+        }
+      ],
+      "expo-asset"
+    ]
   }
 }

@@ -1,0 +1,160 @@
+import { useEffect, useRef, useState } from 'react';
+import type { RecordedClip, Recorder } from './useRecorder';
+
+// Voice-activity-detection timing.
+const POLL_MS = 120;
+const MAX_UTTER_MS = 12000; // hard cap on a single chunk
+// If nobody speaks for this long, recycle the recording (flush the silent file,
+// fresh start). Must be < MAX_UTTER_MS or the hard cap would pre-empt it.
+const MAX_WAIT_MS = 8000;
+
+// Turn-based (Auto) vs streaming (Live) segmentation.
+//  - endSilence: how long a pause ends a chunk. Shorter = more "live".
+//  - minSpeech:  minimum voiced time to count as a chunk (rejects coughs).
+//  - softMax:    in Live, flush a chunk this often even with no pause (run-ons). 0 = off.
+const TURN = { endSilence: 1100, minSpeech: 350, softMax: 0 };
+const LIVE = { endSilence: 500, minSpeech: 250, softMax: 4500 };
+
+const now = () => Date.now();
+const msg = (e: any) => (e?.message ? String(e.message) : String(e));
+
+export interface AutoListenerOptions {
+  recorder: Recorder;
+  enabled: boolean;
+  /** dBFS threshold above which a sample counts as speech. */
+  thresholdDb: number;
+  /** Live = stream short chunks as the person speaks. Turn = wait for the full turn. */
+  live: boolean;
+  /** Called with each detected chunk. In turn mode it should resolve when fully handled
+   *  (incl. TTS) — that's what keeps it half-duplex. In live mode it should resolve fast
+   *  (just enqueue the clip) so listening continues uninterrupted. */
+  onSegment: (clip: RecordedClip) => Promise<void>;
+  onError?: (message: string) => void;
+}
+
+/**
+ * Always-listening loop: record → detect a speech burst followed by a pause →
+ * hand the clip to `onSegment` → listen again.
+ *  - Turn (Auto): long pause ends the turn; onSegment awaits translate+TTS, so we
+ *    never hear our own spoken translation (half-duplex).
+ *  - Live: short pauses (or a soft cap) cut frequent chunks; onSegment returns
+ *    immediately (enqueue) so listening is continuous and text streams.
+ */
+export function useAutoListener(opts: AutoListenerOptions): { level: number } {
+  const [level, setLevel] = useState(-160);
+
+  const enabledRef = useRef(opts.enabled);
+  const runningRef = useRef(false);
+  const thresholdRef = useRef(opts.thresholdDb);
+  const liveRef = useRef(opts.live);
+  const onSegmentRef = useRef(opts.onSegment);
+  const onErrorRef = useRef(opts.onError);
+  const recorderRef = useRef(opts.recorder);
+
+  // Keep latest values available to the long-lived loop without restarting it.
+  thresholdRef.current = opts.thresholdDb;
+  liveRef.current = opts.live;
+  onSegmentRef.current = opts.onSegment;
+  onErrorRef.current = opts.onError;
+  recorderRef.current = opts.recorder;
+
+  useEffect(() => {
+    enabledRef.current = opts.enabled;
+    if (opts.enabled && !runningRef.current) {
+      runningRef.current = true;
+      void runLoop();
+    }
+    // When disabled, the running loop observes enabledRef and exits on its own.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [opts.enabled]);
+
+  async function runLoop() {
+    try {
+      while (enabledRef.current) {
+        const clip = await captureUtterance();
+        if (!enabledRef.current) break;
+        if (!clip) continue; // pure silence — keep listening
+        try {
+          await onSegmentRef.current(clip);
+        } catch (e) {
+          onErrorRef.current?.(msg(e));
+        }
+      }
+    } finally {
+      runningRef.current = false;
+      setLevel(-160);
+      const r = recorderRef.current;
+      try {
+        if (r.isRecording) await r.stop();
+      } catch {
+        /* ignore */
+      }
+    }
+  }
+
+  function captureUtterance(): Promise<RecordedClip | null> {
+    const r = recorderRef.current;
+    return new Promise<RecordedClip | null>((resolve) => {
+      let done = false;
+      let timer: ReturnType<typeof setInterval> | null = null;
+
+      const finish = async (capture: boolean) => {
+        if (done) return;
+        done = true;
+        if (timer) clearInterval(timer);
+        let clip: RecordedClip | null = null;
+        try {
+          clip = await r.stop();
+        } catch {
+          clip = null;
+        }
+        setLevel(-160);
+        resolve(capture ? clip : null);
+      };
+
+      // Lock the segmentation profile for this chunk (Live vs Turn).
+      const cfg = liveRef.current ? LIVE : TURN;
+
+      r.start()
+        .then(() => {
+          const startTs = now();
+          let lastVoiceTs = startTs;
+          let voiceMs = 0;
+          let hasSpeech = false;
+          let lastShown = -160;
+
+          timer = setInterval(() => {
+            if (done) return;
+            if (!enabledRef.current) {
+              void finish(false);
+              return;
+            }
+            const db = r.getMetering();
+            if (Math.abs(db - lastShown) >= 2) {
+              lastShown = db;
+              setLevel(db);
+            }
+            const t = now();
+            if (db > thresholdRef.current) {
+              lastVoiceTs = t;
+              voiceMs += POLL_MS;
+              if (voiceMs >= cfg.minSpeech) hasSpeech = true;
+            }
+            const sinceStart = t - startTs;
+            const sinceVoice = t - lastVoiceTs;
+            if (hasSpeech && sinceVoice >= cfg.endSilence) void finish(true);
+            else if (cfg.softMax && hasSpeech && sinceStart >= cfg.softMax) void finish(true);
+            else if (sinceStart >= MAX_UTTER_MS) void finish(hasSpeech);
+            else if (!hasSpeech && sinceStart >= MAX_WAIT_MS) void finish(false);
+          }, POLL_MS);
+        })
+        .catch((e) => {
+          enabledRef.current = false;
+          onErrorRef.current?.(msg(e));
+          resolve(null);
+        });
+    });
+  }
+
+  return { level };
+}
