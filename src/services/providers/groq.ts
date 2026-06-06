@@ -81,10 +81,12 @@ export const groqProvider: TranslationProvider = {
   apiKeyUrl: 'https://console.groq.com/keys',
   keyHint:
     'Free key with a generous quota. Whisper transcribes, then your chosen model translates with Bavarian cleanup.',
+  // Bavarian quality is capped by the fixed Whisper transcribe step (great at
+  // standard German, weak on heavy dialect) — so all translate models score similarly.
   models: [
-    { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B (recommended)' },
-    { id: 'llama-3.1-8b-instant', label: 'Llama 3.1 8B (fastest)' },
-    { id: 'openai/gpt-oss-120b', label: 'GPT-OSS 120B' },
+    { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B', score: 60, quota: '1000s/day free' },
+    { id: 'qwen/qwen3-32b', label: 'Qwen3 32B (multilingual)', score: 60, quota: '1000s/day free' },
+    { id: 'meta-llama/llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout', score: 60, quota: '1000s/day free' },
   ],
   defaultModel: 'llama-3.3-70b-versatile',
   allowCustomModel: true,

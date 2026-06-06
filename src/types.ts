@@ -65,13 +65,14 @@ export interface Settings {
 }
 
 export const DEFAULT_SETTINGS: Settings = {
-  // Groq is the default: its free tier is far larger than Gemini's (good for real
-  // conversations). Switch to Gemini in Settings for the strongest Bavarian reading.
-  engineId: 'groq',
+  // Gemini 2.5 Flash is the default: best Bavarian quality that runs on a free key
+  // (Pro is paid). Switch to Groq in Settings for far higher quota (weaker dialect).
+  engineId: 'gemini',
   engineModels: {},
   engineKeys: {
     gemini: process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '',
     groq: process.env.EXPO_PUBLIC_GROQ_API_KEY ?? '',
+    openrouter: process.env.EXPO_PUBLIC_OPENROUTER_API_KEY ?? '',
   },
 
   autoSpeak: true,

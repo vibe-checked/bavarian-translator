@@ -52,13 +52,15 @@ export const openrouterProvider: TranslationProvider = {
   tier: 'freemium',
   apiKeyUrl: 'https://openrouter.ai/keys',
   keyHint:
-    'One key, many models. Pick any AUDIO-capable model id from openrouter.ai/models (some are free). Non-audio models will not work.',
+    'One key to reach top models (e.g. gemini-2.5-pro). Audio needs a small prepaid balance (≥$0.50) — even the “free” models. Top up at openrouter.ai/credits.',
+  // One key, but pay-as-you-go credits. Reaches the top models that Gemini/OpenAI
+  // gate behind billing on their own free tiers.
   models: [
-    { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash (recommended)' },
-    { id: 'google/gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite' },
-    { id: 'openai/gpt-4o-audio-preview', label: 'GPT-4o audio' },
+    { id: 'google/gemini-2.5-pro', label: 'Gemini 2.5 Pro — top quality', score: 95, quota: 'credits/paid' },
+    { id: 'openai/gpt-audio', label: 'GPT-audio (OpenAI omni)', score: 90, quota: 'credits/paid' },
+    { id: 'google/gemini-2.5-flash', label: 'Gemini 2.5 Flash', score: 86, quota: 'credits/paid' },
   ],
-  defaultModel: 'google/gemini-2.5-flash',
+  defaultModel: 'google/gemini-2.5-pro',
   allowCustomModel: true,
   translate,
 };

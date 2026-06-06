@@ -4,17 +4,19 @@ import { geminiProvider } from './gemini';
 import { groqProvider } from './groq';
 import { mistralProvider } from './mistral';
 import { openrouterProvider } from './openrouter';
-import { openaiProvider } from './openai';
 
 export type { TranslationProvider, ModelOption, Tier, Expected } from './types';
 
-/** Ordered list shown in the engine picker. Add a new provider here to expose it. */
+/**
+ * Ordered list shown in the engine picker. Every engine here is free or has a
+ * free tier. (OpenAI was dropped — paid-only; its gpt-audio is still reachable
+ * via OpenRouter.) Add a new provider here to expose it.
+ */
 export const PROVIDERS: TranslationProvider[] = [
   geminiProvider,
   groqProvider,
   mistralProvider,
   openrouterProvider,
-  openaiProvider,
 ];
 
 export function getProvider(id: string): TranslationProvider {

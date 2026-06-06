@@ -11,7 +11,7 @@ Each person taps their mic, speaks, and the conversation appears **in both langu
 
 ## What makes it good for Bavarian
 
-- **Understanding Bavarian:** speech is sent to a **pluggable translation engine** (Google **Gemini** by default), prompted to expect and correctly interpret **Bavarian dialect** (Boarisch) — `Servus`, `fei`, `gell`, `a bissl`, `ned/nix`, `Bua`, `Brotzeit`, `dahoam`, `passt scho`, `-erl` diminutives, and so on. Each line is tagged **`Bairisch`** when dialect was detected. This is the part that off-the-shelf tools usually fail at, and it works well here. You can switch engines (Gemini → Groq → OpenAI) and models from **Settings → Translation engine** — see below.
+- **Understanding Bavarian:** speech is sent to a **pluggable translation engine** (Google **Gemini** by default), prompted to expect and correctly interpret **Bavarian dialect** (Boarisch) — `Servus`, `fei`, `gell`, `a bissl`, `ned/nix`, `Bua`, `Brotzeit`, `dahoam`, `passt scho`, `-erl` diminutives, and so on. Each line is tagged **`Bairisch`** when dialect was detected. This is the part that off-the-shelf tools usually fail at, and it works well here. You can switch engines (Gemini · Groq · Mistral · OpenRouter) and models from **Settings → Translation engine** — see below.
 - **Speaking German:** the built-in voice is clear Standard German with adjustable speed (great for Oma). True spoken-Bavarian output isn't something standard text-to-speech can do — but **Austrian (de-AT) voices sound noticeably closer to Bavarian**, so the voice picker surfaces them first. For an authentic Bavarian *voice*, you can optionally plug in **ElevenLabs** with a cloned Bavarian voice (see below).
 
 ## Prerequisites
@@ -36,15 +36,16 @@ Add an API key one of two ways:
 
 Switch in **Settings → Translation engine**. Each engine keeps its own key and model; the choice is remembered.
 
+Every engine is free or has a free tier. Each model shows a **quality score** (my estimate for Bavarian, 0–100, comparable across providers) and a rough **quota** tag. **Tags:** `FREE` = free within daily limits, no card; `FREE TIER` = free allowance on a paid platform (best models / heavy use cost credits).
+
 | Engine | Tier | How it works | Get a key |
 | --- | --- | --- | --- |
-| **Google Gemini** *(default)* | Free | Sends audio straight to `gemini-2.5-flash` (or 2.5 Flash-Lite / 2.0 Flash). Best Bavarian understanding via prompting. | https://aistudio.google.com/apikey |
-| **Groq** (Whisper + Llama) | Free | Whisper (`whisper-large-v3-turbo`) transcribes, then your chosen Llama model translates with Bavarian cleanup. Very fast, generous quota. | https://console.groq.com/keys |
-| **Mistral** (Voxtral) | Free tier | Voxtral (`voxtral-mini-latest`) transcribes, then a Mistral model translates with Bavarian cleanup. European provider, free experiment tier. | https://console.mistral.ai/api-keys |
-| **OpenRouter** (many models) | Free tier / pay | One key, then pick **any audio-capable** model id (`google/gemini-2.5-flash`, `openai/gpt-4o-audio-preview`, free models…) from openrouter.ai/models. | https://openrouter.ai/keys |
-| **OpenAI** (GPT-4o audio) | Paid (cheap) | Sends audio to `gpt-4o-mini-audio-preview` / `gpt-4o-audio-preview`. Strong dialect handling. | https://platform.openai.com/api-keys |
+| **Google Gemini** *(default)* | FREE | Sends audio straight to one model. `2.5 Flash` (≈86, ~20/day free) is the default; `2.5 Pro` (≈95) is top quality but **needs billing**; Flash-Lite is fastest. Best Bavarian. | https://aistudio.google.com/apikey |
+| **Groq** (Whisper + Llama) | FREE | Whisper transcribes, then Llama/Qwen translates. Huge quota, fast, **great standard German but weak on heavy dialect** (Whisper bottleneck, ≈60). | https://console.groq.com/keys |
+| **Mistral** (Voxtral) | FREE TIER | Voxtral transcribes, then a Mistral model translates (≈66). European provider, free experiment tier. | https://console.mistral.ai/api-keys |
+| **OpenRouter** (many models) | FREE TIER | One key (pay-as-you-go credits) to reach the **top models** — `google/gemini-2.5-pro` (≈95), `openai/gpt-audio` (≈90) — plus any audio-capable model from openrouter.ai/models. | https://openrouter.ai/keys |
 
-Each engine also has a **Custom model id** field, so if a model gets renamed you can type the new id without waiting for an update.
+*OpenAI direct was removed (paid-only, no free tier) — its `gpt-audio` is still reachable via OpenRouter.* Each engine also has a **Custom model id** field, so if a model is renamed you can type the new id without an update.
 
 **Adding another engine** is a small, self-contained change: create `src/services/providers/<name>.ts` implementing the `TranslationProvider` interface (one `translate()` method returning `{ detected, bavarian, de, en }`), then add it to the `PROVIDERS` array in `src/services/providers/index.ts`. It appears in Settings automatically.
 

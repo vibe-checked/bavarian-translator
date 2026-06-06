@@ -12,7 +12,13 @@ import {
 } from 'react-native';
 import type { Settings } from '../types';
 import type { VoiceInfo } from '../services/tts';
-import { PROVIDERS, getProvider, type Tier, type TranslationProvider } from '../services/providers';
+import {
+  PROVIDERS,
+  getProvider,
+  type Tier,
+  type TranslationProvider,
+  type ModelOption,
+} from '../services/providers';
 
 interface Props {
   visible: boolean;
@@ -55,6 +61,11 @@ export function SettingsSheet(props: Props) {
             <Text style={styles.help}>
               Choose which AI transcribes and translates (this drives the Bavarian understanding).
               Each engine uses its own API key, saved on this device.
+            </Text>
+            <Text style={styles.help}>
+              <Text style={{ fontWeight: '800', color: '#0A7A2F' }}>FREE</Text> = free within daily
+              limits, no card.  <Text style={{ fontWeight: '800', color: '#0059C9' }}>FREE TIER</Text>{' '}
+              = free allowance on a paid platform (best models / heavy use cost credits).
             </Text>
             {PROVIDERS.map((p) => (
               <ProviderRow
@@ -205,6 +216,25 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
+function scoreColor(s: number) {
+  return s >= 85 ? '#0A7A2F' : s >= 70 ? '#0059C9' : '#B8860B';
+}
+
+/** Small horizontal gauge (meter) + number, colored by quality tier. */
+function ScoreGauge({ score }: { score: number }) {
+  const fill = Math.max(0.05, Math.min(1, score / 100));
+  const tone = scoreColor(score);
+  return (
+    <View style={styles.gaugeWrap}>
+      <View style={styles.gaugeTrack}>
+        <View style={{ flex: fill, backgroundColor: tone }} />
+        <View style={{ flex: 1 - fill }} />
+      </View>
+      <Text style={[styles.gaugeNum, { color: tone }]}>{score}</Text>
+    </View>
+  );
+}
+
 function TierBadge({ tier }: { tier: Tier }) {
   const label = tier === 'free' ? 'FREE' : tier === 'freemium' ? 'FREE TIER' : 'PAID';
   const tone = tier === 'paid' ? styles.badgePaid : tier === 'freemium' ? styles.badgeFreemium : styles.badgeFree;
@@ -225,6 +255,7 @@ function ProviderRow({
       <View style={styles.providerLeft}>
         <Text style={[styles.voiceText, active ? styles.voiceTextActive : null]}>{provider.label}</Text>
         <TierBadge tier={provider.tier} />
+        <ScoreGauge score={Math.max(...provider.models.map((m) => m.score))} />
       </View>
       {active ? <Text style={styles.check}>✓</Text> : null}
     </Pressable>
@@ -251,8 +282,12 @@ function EngineConfig({
   return (
     <View style={styles.engineConfig}>
       <Text style={styles.subhead}>Model · {provider.label}</Text>
+      <Text style={styles.help}>
+        Score = my estimate of quality for Bavarian (0–100), comparable across providers. Higher
+        quality usually means a smaller free quota.
+      </Text>
       {provider.models.map((m) => (
-        <VoiceRow key={m.id} label={m.label} active={curModel === m.id} onPress={() => setModel(m.id)} />
+        <ModelRow key={m.id} model={m} active={curModel === m.id} onPress={() => setModel(m.id)} />
       ))}
       {provider.allowCustomModel ? (
         <TextInput
@@ -283,6 +318,29 @@ function EngineConfig({
         {curKey ? '✓ Key saved on this device' : '⚠ No key yet — this engine won’t work until you add one'}
       </Text>
     </View>
+  );
+}
+
+function ModelRow({
+  model,
+  active,
+  onPress,
+}: {
+  model: ModelOption;
+  active: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable onPress={onPress} style={[styles.voiceRow, active ? styles.voiceRowActive : null]}>
+      <View style={styles.modelLeft}>
+        <Text style={[styles.voiceText, active ? styles.voiceTextActive : null]}>{model.label}</Text>
+        <Text style={styles.modelQuota}>{model.quota}</Text>
+      </View>
+      <View style={styles.modelRight}>
+        <ScoreGauge score={model.score} />
+        {active ? <Text style={styles.check}>✓</Text> : null}
+      </View>
+    </Pressable>
   );
 }
 
@@ -392,6 +450,20 @@ const styles = StyleSheet.create({
   badgeFree: { color: '#0A7A2F', backgroundColor: '#D6F5DF' },
   badgeFreemium: { color: '#0059C9', backgroundColor: '#DCEBFF' },
   badgePaid: { color: '#8A4B00', backgroundColor: '#FFE2B0' },
+  topScore: { fontSize: 12, fontWeight: '800', color: '#888' },
+  gaugeWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  gaugeTrack: {
+    width: 44,
+    height: 7,
+    borderRadius: 4,
+    backgroundColor: '#E2E2E7',
+    overflow: 'hidden',
+    flexDirection: 'row',
+  },
+  gaugeNum: { fontSize: 13, fontWeight: '800', minWidth: 22, textAlign: 'right' },
+  modelLeft: { flexShrink: 1, paddingRight: 8 },
+  modelQuota: { fontSize: 12, color: '#777', marginTop: 2 },
+  modelRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   rowLabel: { fontSize: 15, color: '#222', flexShrink: 1, paddingRight: 12 },
   chips: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },

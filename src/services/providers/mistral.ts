@@ -77,11 +77,13 @@ export const mistralProvider: TranslationProvider = {
   apiKeyUrl: 'https://console.mistral.ai/api-keys',
   keyHint:
     'European provider with a free experiment tier. Voxtral transcribes, then your chosen Mistral model translates with Bavarian cleanup.',
+  // Two-step (Voxtral transcribe + chat translate). TESTED: excellent on standard
+  // German, but Voxtral mangled Bavarian to gibberish (worse than Groq's Whisper).
   models: [
-    { id: 'mistral-small-latest', label: 'Mistral Small (recommended)' },
-    { id: 'mistral-large-latest', label: 'Mistral Large (best)' },
+    { id: 'mistral-large-latest', label: 'Mistral Large', score: 58, quota: 'free tier' },
+    { id: 'mistral-small-latest', label: 'Mistral Small (faster)', score: 55, quota: 'free tier' },
   ],
-  defaultModel: 'mistral-small-latest',
+  defaultModel: 'mistral-large-latest',
   allowCustomModel: true,
   translate,
 };

@@ -18,6 +18,15 @@ export interface TranslateInput extends AudioClip {
 export interface ModelOption {
   id: string;
   label: string;
+  /**
+   * Estimated quality for THIS app's job — Bavarian/German↔English speech
+   * translation — on a 0-100 scale, comparable ACROSS providers. My judgment,
+   * calibrated by real tests (single-audio-model engines beat two-step
+   * Whisper-based ones on dialect).
+   */
+  score: number;
+  /** Short access/quota tag, e.g. '~20/day free', '1000s/day free', 'PAID', 'credits/paid'. */
+  quota: string;
 }
 
 export type Tier = 'free' | 'freemium' | 'paid';

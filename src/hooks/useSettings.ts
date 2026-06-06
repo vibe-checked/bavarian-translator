@@ -21,8 +21,16 @@ export function useSettings(): SettingsStore {
       try {
         const raw = await AsyncStorage.getItem(KEY);
         if (alive && raw) {
-          // Merge so new settings fields added in updates still get defaults.
-          setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(raw) });
+          const parsed = JSON.parse(raw);
+          // Deep-merge the per-engine maps so env-seeded keys/models added after the
+          // user's settings were first saved still appear (a shallow merge would let
+          // an old saved engineKeys object hide a newly-added key like OpenRouter).
+          setSettings({
+            ...DEFAULT_SETTINGS,
+            ...parsed,
+            engineKeys: { ...DEFAULT_SETTINGS.engineKeys, ...(parsed.engineKeys ?? {}) },
+            engineModels: { ...DEFAULT_SETTINGS.engineModels, ...(parsed.engineModels ?? {}) },
+          });
         }
       } catch {
         /* fall back to defaults */

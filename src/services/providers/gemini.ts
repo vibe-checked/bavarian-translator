@@ -69,9 +69,9 @@ export const geminiProvider: TranslationProvider = {
   apiKeyUrl: 'https://aistudio.google.com/apikey',
   keyHint: 'Free key from Google AI Studio — no credit card. Best Bavarian understanding.',
   models: [
-    { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash (recommended)' },
-    { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite (fastest)' },
-    { id: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' },
+    { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro — top quality', score: 95, quota: 'PAID (needs billing)' },
+    { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash — best free', score: 86, quota: '~20/day free' },
+    { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite — fastest', score: 80, quota: 'free · daily cap' },
   ],
   defaultModel: 'gemini-2.5-flash',
   allowCustomModel: true,
