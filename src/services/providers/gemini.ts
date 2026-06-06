@@ -68,8 +68,9 @@ export const geminiProvider: TranslationProvider = {
   tier: 'free',
   apiKeyUrl: 'https://aistudio.google.com/apikey',
   keyHint: 'Free key from Google AI Studio — no credit card. Best Bavarian understanding.',
+  // 2.5 Pro is omitted: it's paid-only on the free tier (limit:0). 3.x return 404
+  // on a free key. So Flash is the best Gemini that actually runs for free.
   models: [
-    { id: 'gemini-2.5-pro', label: 'Gemini 2.5 Pro — top quality', score: 95, quota: 'PAID (needs billing)' },
     { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash — best free', score: 86, quota: '~20/day free' },
     { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite — fastest', score: 80, quota: 'free · daily cap' },
   ],

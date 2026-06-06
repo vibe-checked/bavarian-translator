@@ -72,7 +72,7 @@ export const DEFAULT_SETTINGS: Settings = {
   engineKeys: {
     gemini: process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '',
     groq: process.env.EXPO_PUBLIC_GROQ_API_KEY ?? '',
-    openrouter: process.env.EXPO_PUBLIC_OPENROUTER_API_KEY ?? '',
+    mistral: process.env.EXPO_PUBLIC_MISTRAL_API_KEY ?? '',
   },
 
   autoSpeak: true,

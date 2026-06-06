@@ -252,12 +252,14 @@ function ProviderRow({
 }) {
   return (
     <Pressable onPress={onSelect} style={[styles.voiceRow, active ? styles.voiceRowActive : null]}>
-      <View style={styles.providerLeft}>
-        <Text style={[styles.voiceText, active ? styles.voiceTextActive : null]}>{provider.label}</Text>
+      <Text style={[styles.voiceText, active ? styles.voiceTextActive : null]} numberOfLines={1}>
+        {provider.label}
+      </Text>
+      <View style={styles.providerRight}>
         <TierBadge tier={provider.tier} />
         <ScoreGauge score={Math.max(...provider.models.map((m) => m.score))} />
+        {active ? <Text style={styles.check}>✓</Text> : null}
       </View>
-      {active ? <Text style={styles.check}>✓</Text> : null}
     </Pressable>
   );
 }
@@ -438,7 +440,7 @@ const styles = StyleSheet.create({
   subhead: { fontSize: 13, fontWeight: '800', color: '#444', marginTop: 6 },
   link: { color: '#007AFF', fontSize: 13, fontWeight: '600' },
   engineConfig: { gap: 10, marginTop: 4 },
-  providerLeft: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 1 },
+  providerRight: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 0 },
   badge: {
     fontSize: 10,
     fontWeight: '800',
