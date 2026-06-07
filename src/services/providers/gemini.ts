@@ -1,6 +1,6 @@
 import type { TranslateResult } from '../../types';
 import type { TranslateInput, TranslationProvider } from './types';
-import { audioInstruction, parseResult, httpError, retryAfterSeconds } from './prompt';
+import { audioInstruction, parseResult, httpError, retryAfterSeconds, isLikelyNonSpeech } from './prompt';
 
 const ENDPOINT = (model: string, key: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
@@ -70,7 +70,16 @@ async function translate(input: TranslateInput): Promise<TranslateResult> {
   const json = await res.json();
   const text: string | undefined = json?.candidates?.[0]?.content?.parts?.[0]?.text;
   if (!text) throw new Error('Gemini returned no text (the clip may have been empty).');
-  return parseResult(text);
+  const r = parseResult(text);
+  // Backstop: even the multimodal model occasionally emits a canned caption/recipe
+  // line on silence. Only drop when a NON-empty field is junk (no duration arg —
+  // its text is cleaned, so words/sec is moot); empty results fall through to the
+  // app's normal "didn't catch that" handling.
+  const junk = (t: string) => t.trim() !== '' && isLikelyNonSpeech(t);
+  if (junk(r.de) || junk(r.en)) {
+    return { detected: 'other', bavarian: false, de: '', en: '' };
+  }
+  return r;
 }
 
 export const geminiProvider: TranslationProvider = {

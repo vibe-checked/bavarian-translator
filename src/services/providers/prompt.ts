@@ -108,19 +108,53 @@ export function retryAfterSeconds(res: { headers?: { get?(name: string): string 
   return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
-// Whisper/Voxtral hallucinate canned caption phrases on silence or noise
-// ("Vielen Dank fürs Zuschauen", "Thanks for watching", "Untertitel … Amara.org",
-// music notes …). These never occur in real conversation, so treat them as
-// no-speech → the app shows "didn't catch that" instead of a spurious bubble.
+// Whisper/Voxtral hallucinate canned phrases on silence or noise: video
+// captions, sign-offs, recipe lines, and "could you repeat?" filler. None of
+// these occur in a real two-way conversation, so we treat them as no-speech →
+// the app shows "didn't catch that" instead of a spurious bubble.
 // NOTE: deliberately does NOT match bare "Danke"/"Thank you" — those are real.
-const NON_SPEECH =
-  /amara\.org|untertitel|zuschauen|aufmerksamkeit|thanks?\s+for\s+watching|please\s+subscribe|like\s+and\s+subscribe|untertitelung|^[\s♪♫🎵.,!?-]*$|^[\s]*[♪♫🎵]/i;
 
-/** True when a transcript is empty or an obvious non-speech hallucination. */
-export function isLikelyNonSpeech(transcript: string): boolean {
+// Video-caption / sign-off relics — matched anywhere in the text.
+const CAPTION =
+  /amara\.org|untertitel|zuschauen|aufmerksamkeit|thanks?\s+for\s+watching|(?:please|don'?t\s+forget\s+to)\s+subscribe|like\s+and\s+subscribe|\bzdf\b|\bwdr\b|^[\s♪♫🎵.,!?\-–—]*$|^\s*[♪♫🎵]/i;
+
+// A standalone recipe-measurement line ("1 teaspoon of vanilla extract",
+// "1 EL Butter", "1 Teelöffel Vanilleextrakt") — a classic Whisper relic from
+// its cooking-video training data. Anchored + short so real recipe talk inside
+// a full sentence is kept.
+const RECIPE =
+  /^\s*\d+(?:[.,/]\d+)?\s*(?:tsp|tbsp|teaspoons?|tablespoons?|cups?|ounces?|oz|grams?|kg|ml|el|tl|teel(?:ö|oe)ffel|e(?:ß|ss)l(?:ö|oe)ffel|tassen?|gramm|prisen?|g)\b.{0,30}$/i;
+
+// "Say-again" filler + the bare language name. Only honored when the WHOLE
+// utterance is short (≤12 words), so a real long sentence that merely contains
+// one of these words survives. The language name is anchored to the whole
+// string so real lines like "Ich kann nur Bairisch" are NOT dropped.
+const CANNED =
+  /^\s*(?:bairisch|bavarian)[\s.!?]*$|(?:could|can)\s+you\s+(?:please\s+)?repeat|please\s+repeat\b|(?:did\s?n'?t|do\s+not|don'?t)\s+(?:understand|catch)\s+(?:that|you|it)\b|nicht\s+verstanden|bitte\s+wiederholen|wiederholen\s+sie\b/i;
+
+/** Duration of a 16 kHz mono 16-bit PCM WAV from its base64 (≈4/3 of bytes). */
+export function wavDurationSec(base64: string): number {
+  const bytes = Math.floor((base64?.length ?? 0) * 0.75);
+  return Math.max(0, (bytes - 44) / 32000);
+}
+
+/**
+ * True when a transcript is empty or an obvious non-speech hallucination.
+ * Pass `durationSec` (for RAW transcripts, e.g. Whisper/Voxtral) to also reject
+ * a whole phrase squeezed out of a tiny noise clip — humans top out ~5–6 words/s.
+ * Do NOT pass it for cleaned/translated text (e.g. Gemini), where word count no
+ * longer tracks the spoken audio.
+ */
+export function isLikelyNonSpeech(transcript: string, durationSec?: number): boolean {
   const s = transcript.trim();
   if (!s) return true;
-  return NON_SPEECH.test(s);
+  if (CAPTION.test(s) || RECIPE.test(s)) return true;
+  const words = s.split(/\s+/).filter(Boolean);
+  if (words.length <= 12 && CANNED.test(s)) return true;
+  if (durationSec && durationSec >= 0.2 && words.length >= 5 && words.length / durationSec > 6.5) {
+    return true;
+  }
+  return false;
 }
 
 /** Shared friendly HTTP error → message, tagged for the failover layer. */

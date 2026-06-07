@@ -12,8 +12,11 @@ const MAX_WAIT_MS = 8000;
 //  - endSilence: how long a pause ends a chunk. Shorter = more "live".
 //  - minSpeech:  minimum voiced time to count as a chunk (rejects coughs).
 //  - softMax:    in Live, flush a chunk this often even with no pause (run-ons). 0 = off.
-const TURN = { endSilence: 1100, minSpeech: 350, softMax: 0 };
-const LIVE = { endSilence: 500, minSpeech: 250, softMax: 4500 };
+// minSpeech raised (was 350/250): a real word lasts >~400ms, while the brief
+// breath/clap/room-noise spikes that make Whisper hallucinate do not — so this
+// keeps most non-speech chunks from ever being sent.
+const TURN = { endSilence: 1100, minSpeech: 450, softMax: 0 };
+const LIVE = { endSilence: 500, minSpeech: 400, softMax: 4500 };
 
 const now = () => Date.now();
 const msg = (e: any) => (e?.message ? String(e.message) : String(e));

@@ -1,7 +1,14 @@
 import { File } from 'expo-file-system';
 import type { TranslateResult } from '../../types';
 import type { TranslateInput, TranslationProvider } from './types';
-import { transcriptInstruction, parseResult, httpError, retryAfterSeconds, isLikelyNonSpeech } from './prompt';
+import {
+  transcriptInstruction,
+  parseResult,
+  httpError,
+  retryAfterSeconds,
+  isLikelyNonSpeech,
+  wavDurationSec,
+} from './prompt';
 
 // Groq does speech in two steps: Whisper transcription, then an LLM translates.
 const TRANSCRIBE_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
@@ -19,6 +26,7 @@ async function transcribe(input: TranslateInput): Promise<string> {
     form.append('language', input.expected);
   }
   form.append('response_format', 'json');
+  form.append('temperature', '0'); // deterministic — a touch less prone to confabulating on noise
   if (input.expected !== 'en') {
     // Bias Whisper toward German spelling; the dialect cleanup happens in the LLM step.
     form.append('prompt', 'Gesprochenes Bairisch bzw. Hochdeutsch.');
@@ -45,7 +53,8 @@ async function transcribe(input: TranslateInput): Promise<string> {
 
 async function translate(input: TranslateInput): Promise<TranslateResult> {
   const transcript = await transcribe(input);
-  if (isLikelyNonSpeech(transcript)) return { detected: 'other', bavarian: false, de: '', en: '' };
+  if (isLikelyNonSpeech(transcript, wavDurationSec(input.base64)))
+    return { detected: 'other', bavarian: false, de: '', en: '' };
 
   const res = await fetch(CHAT_URL, {
     method: 'POST',

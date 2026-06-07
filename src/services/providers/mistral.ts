@@ -1,7 +1,14 @@
 import { File } from 'expo-file-system';
 import type { TranslateResult } from '../../types';
 import type { TranslateInput, TranslationProvider } from './types';
-import { transcriptInstruction, parseResult, httpError, retryAfterSeconds, isLikelyNonSpeech } from './prompt';
+import {
+  transcriptInstruction,
+  parseResult,
+  httpError,
+  retryAfterSeconds,
+  isLikelyNonSpeech,
+  wavDurationSec,
+} from './prompt';
 
 // Mistral does speech in two steps: Voxtral transcription, then an LLM translates.
 const TRANSCRIBE_URL = 'https://api.mistral.ai/v1/audio/transcriptions';
@@ -41,7 +48,8 @@ async function transcribe(input: TranslateInput): Promise<string> {
 
 async function translate(input: TranslateInput): Promise<TranslateResult> {
   const transcript = await transcribe(input);
-  if (isLikelyNonSpeech(transcript)) return { detected: 'other', bavarian: false, de: '', en: '' };
+  if (isLikelyNonSpeech(transcript, wavDurationSec(input.base64)))
+    return { detected: 'other', bavarian: false, de: '', en: '' };
 
   const res = await fetch(CHAT_URL, {
     method: 'POST',
