@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "BavarianTranslator",
-    "slug": "BavarianTranslator",
+    "slug": "bavarian-translator",
     "version": "1.0.0",
     "orientation": "portrait",
     "scheme": "bavariantranslator",
