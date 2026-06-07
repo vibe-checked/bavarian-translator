@@ -35,6 +35,25 @@ interface PaneProps {
   headerRight?: React.ReactNode;
   /** Hide the mic button (auto mode drives recording itself). Default true. */
   showMic?: boolean;
+  /** Current conversation mode — drives the empty-state placeholder text. */
+  mode?: 'tap' | 'auto' | 'live';
+}
+
+/** Empty-state hint, tailored to how the active mode actually works. */
+function placeholder(lang: Lang, mode: 'tap' | 'auto' | 'live'): string {
+  if (mode === 'auto') {
+    return lang === 'de'
+      ? 'Einfach sprechen — die Übersetzung erscheint automatisch, sobald du kurz innehältst.'
+      : 'Just talk — the translation appears here automatically when you pause.';
+  }
+  if (mode === 'live') {
+    return lang === 'de'
+      ? 'Sprich einfach weiter — die Übersetzung läuft live mit, während du redest.'
+      : 'Just keep talking — translations stream in here live as you speak.';
+  }
+  return lang === 'de'
+    ? 'Drück auf das Mikrofon und sprich. Übersetzungen erscheinen hier.'
+    : 'Tap the mic and speak. Translations appear here.';
 }
 
 export function Pane(props: PaneProps) {
@@ -51,113 +70,127 @@ export function Pane(props: PaneProps) {
     <View style={containerStyle}>
       <View style={[styles.header, { borderBottomColor: props.accent }]}>
         <View style={styles.headerText}>
-          <Text style={[styles.title, { color: props.accent }]}>{props.title}</Text>
-          {props.subtitle ? <Text style={styles.subtitle}>{props.subtitle}</Text> : null}
+          <Text style={[styles.title, { color: props.accent }]} numberOfLines={1}>
+            {props.title}
+          </Text>
+          {props.subtitle ? (
+            <Text style={styles.subtitle} numberOfLines={1}>
+              {props.subtitle}
+            </Text>
+          ) : null}
         </View>
         {props.headerRight}
+        {/* Mic lives in the header (compact) so the transcript gets the full pane. */}
+        {props.showMic === false ? null : (
+          <Pressable
+            onPress={props.onMic}
+            disabled={props.disabled || props.busy}
+            style={[
+              styles.mic,
+              { backgroundColor: props.isRecording ? '#B00020' : props.accent },
+              (props.disabled || props.busy) && !props.isRecording ? styles.micDisabled : null,
+            ]}
+          >
+            {props.busy ? (
+              <>
+                <ActivityIndicator color="#fff" size="small" />
+                <Text style={styles.micText}>{props.micBusy}</Text>
+              </>
+            ) : (
+              <Text style={styles.micText} numberOfLines={1}>
+                {props.isRecording ? props.micRecording : props.micIdle}
+              </Text>
+            )}
+          </Pressable>
+        )}
       </View>
 
       <ScrollView
         ref={scrollRef}
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator
+        scrollIndicatorInsets={{ right: 1 }}
         onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}
       >
         {utterances.length === 0 ? (
-          <Text style={styles.empty}>
-            {lang === 'de'
-              ? 'Drück auf das Mikrofon und sprich. Übersetzungen erscheinen hier.'
-              : 'Tap the mic and speak. Translations appear here.'}
-          </Text>
+          <Text style={styles.empty}>{placeholder(lang, props.mode ?? 'tap')}</Text>
         ) : (
           utterances.map((u) => {
             const mine = u.speaker === lang;
             const text = lang === 'de' ? u.de : u.en;
             if (!text) return null;
+            const tagged = u.bavarian && u.speaker === 'de';
             return (
               <Pressable
                 key={u.id}
                 onPress={() => props.onReplay(u)}
                 style={[
                   styles.bubble,
+                  tagged ? styles.bubbleTagged : null,
                   mine
                     ? [styles.bubbleMine, { backgroundColor: props.accent }]
                     : styles.bubbleTheirs,
                 ]}
               >
-                <Text style={[styles.bubbleText, { fontSize }, mine ? styles.bubbleTextMine : null]}>
+                {tagged ? (
+                  <Text style={[styles.tag, mine ? styles.tagMine : null]}>Bairisch</Text>
+                ) : null}
+                <Text
+                  style={[
+                    styles.bubbleText,
+                    { fontSize, lineHeight: Math.round(fontSize * 1.22) },
+                    mine ? styles.bubbleTextMine : null,
+                  ]}
+                >
                   {text}
                 </Text>
-                <View style={styles.bubbleFooter}>
-                  {u.bavarian && u.speaker === 'de' ? (
-                    <Text style={[styles.tag, mine ? styles.tagMine : null]}>Bairisch</Text>
-                  ) : (
-                    <View />
-                  )}
-                  <Text style={[styles.replay, mine ? styles.replayMine : null]}>🔊 tap to replay</Text>
-                </View>
+                {/* Speaker icon only — no label, to save vertical space. Tap the bubble to replay. */}
+                <Text style={[styles.replayIcon, mine ? styles.replayIconMine : null]}>🔊</Text>
               </Pressable>
             );
           })
         )}
       </ScrollView>
-
-      {props.showMic === false ? null : (
-        <Pressable
-          onPress={props.onMic}
-          disabled={props.disabled || props.busy}
-          style={[
-            styles.mic,
-            { backgroundColor: props.isRecording ? '#B00020' : props.accent },
-            (props.disabled || props.busy) && !props.isRecording ? styles.micDisabled : null,
-          ]}
-        >
-          {props.busy ? (
-            <>
-              <ActivityIndicator color="#fff" />
-              <Text style={styles.micText}>{props.micBusy}</Text>
-            </>
-          ) : (
-            <Text style={styles.micText}>
-              {props.isRecording ? props.micRecording : props.micIdle}
-            </Text>
-          )}
-        </Pressable>
-      )}
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  pane: { flex: 1, paddingHorizontal: 14, paddingTop: 10, paddingBottom: 12 },
+  // No horizontal padding here: the ScrollView spans the full width so its scroll
+  // indicator sits at the very right edge (like Settings). Content is inset instead
+  // via the header's margin and the scroll content's padding.
+  pane: { flex: 1, paddingTop: 7, paddingBottom: 8 },
   flipped: { transform: [{ rotate: '180deg' }] },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    gap: 10,
+    marginHorizontal: 14,
     borderBottomWidth: 2,
-    paddingBottom: 6,
-    marginBottom: 6,
+    paddingBottom: 5,
+    marginBottom: 5,
   },
   headerText: { flexShrink: 1 },
-  title: { fontSize: 20, fontWeight: '800' },
-  subtitle: { fontSize: 13, color: '#555', marginTop: 1 },
+  title: { fontSize: 18, fontWeight: '800' },
+  subtitle: { fontSize: 12, color: '#555', marginTop: 0 },
   scroll: { flex: 1 },
-  scrollContent: { paddingVertical: 6, gap: 8 },
+  scrollContent: { paddingVertical: 6, paddingHorizontal: 14, gap: 8 },
   empty: { color: '#888', fontSize: 16, textAlign: 'center', marginTop: 24, paddingHorizontal: 16 },
-  bubble: { borderRadius: 16, paddingHorizontal: 14, paddingVertical: 10, maxWidth: '92%' },
+  // Wide bubble + slim right gutter (just enough to clear the corner icon) so each
+  // line packs as many words as possible before wrapping.
+  bubble: { borderRadius: 16, paddingLeft: 13, paddingRight: 26, paddingVertical: 9, maxWidth: '96%' },
+  // Extra top room for the absolutely-positioned "Bairisch" tag (only when present).
+  bubbleTagged: { paddingTop: 26 },
   bubbleMine: { alignSelf: 'flex-end', borderBottomRightRadius: 4 },
   bubbleTheirs: { alignSelf: 'flex-start', backgroundColor: '#FFFFFF', borderBottomLeftRadius: 4 },
-  bubbleText: { color: '#111', lineHeight: 28 },
+  bubbleText: { color: '#111' },
   bubbleTextMine: { color: '#fff' },
-  bubbleFooter: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginTop: 6,
-    gap: 8,
-  },
   tag: {
+    position: 'absolute',
+    top: 6,
+    left: 14,
     fontSize: 11,
     fontWeight: '700',
     color: '#7A4B00',
@@ -168,17 +201,22 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   tagMine: { color: '#fff', backgroundColor: 'rgba(255,255,255,0.25)' },
-  replay: { fontSize: 11, color: '#888' },
-  replayMine: { color: 'rgba(255,255,255,0.8)' },
+  // Small speaker glyph tucked into the bottom-right gutter — no text label.
+  replayIcon: { position: 'absolute', right: 6, bottom: 6, fontSize: 13, color: '#9aa0a6' },
+  replayIconMine: { color: 'rgba(255,255,255,0.85)' },
+  // Compact pill in the header (was a full-width 64px block at the bottom).
   mic: {
-    marginTop: 8,
-    minHeight: 64,
-    borderRadius: 18,
+    minHeight: 40,
+    maxWidth: '54%',
+    flexShrink: 0,
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 12,
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
-    gap: 10,
+    gap: 8,
   },
   micDisabled: { opacity: 0.4 },
-  micText: { color: '#fff', fontSize: 20, fontWeight: '800' },
+  micText: { color: '#fff', fontSize: 16, fontWeight: '800' },
 });

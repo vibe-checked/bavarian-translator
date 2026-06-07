@@ -1,7 +1,7 @@
 import { File } from 'expo-file-system';
 import type { TranslateResult } from '../../types';
 import type { TranslateInput, TranslationProvider } from './types';
-import { transcriptInstruction, parseResult, httpError } from './prompt';
+import { transcriptInstruction, parseResult, httpError, retryAfterSeconds, isLikelyNonSpeech } from './prompt';
 
 // Mistral does speech in two steps: Voxtral transcription, then an LLM translates.
 const TRANSCRIBE_URL = 'https://api.mistral.ai/v1/audio/transcriptions';
@@ -23,6 +23,7 @@ async function transcribe(input: TranslateInput): Promise<string> {
     method: 'POST',
     headers: { Authorization: `Bearer ${input.apiKey}` },
     body: form,
+    signal: input.signal,
   });
   if (!res.ok) {
     let detail = '';
@@ -32,7 +33,7 @@ async function transcribe(input: TranslateInput): Promise<string> {
     } catch {
       /* ignore */
     }
-    throw httpError('Mistral (transcribe)', res.status, detail);
+    throw httpError('Mistral (transcribe)', res.status, detail, retryAfterSeconds(res));
   }
   const json = await res.json();
   return (json?.text ?? json?.transcription ?? '').trim();
@@ -40,7 +41,7 @@ async function transcribe(input: TranslateInput): Promise<string> {
 
 async function translate(input: TranslateInput): Promise<TranslateResult> {
   const transcript = await transcribe(input);
-  if (!transcript) return { detected: 'other', bavarian: false, de: '', en: '' };
+  if (isLikelyNonSpeech(transcript)) return { detected: 'other', bavarian: false, de: '', en: '' };
 
   const res = await fetch(CHAT_URL, {
     method: 'POST',
@@ -54,6 +55,7 @@ async function translate(input: TranslateInput): Promise<TranslateResult> {
         { role: 'user', content: `Transcript: "${transcript}"` },
       ],
     }),
+    signal: input.signal,
   });
   if (!res.ok) {
     let detail = '';
@@ -62,7 +64,7 @@ async function translate(input: TranslateInput): Promise<TranslateResult> {
     } catch {
       /* ignore */
     }
-    throw httpError('Mistral', res.status, detail);
+    throw httpError('Mistral', res.status, detail, retryAfterSeconds(res));
   }
   const json = await res.json();
   const text: string | undefined = json?.choices?.[0]?.message?.content;
@@ -77,11 +79,15 @@ export const mistralProvider: TranslationProvider = {
   apiKeyUrl: 'https://console.mistral.ai/api-keys',
   keyHint:
     'European provider with a free experiment tier. Voxtral transcribes, then your chosen Mistral model translates with Bavarian cleanup.',
-  // Two-step (Voxtral transcribe + chat translate). TESTED: excellent on standard
-  // German, but Voxtral mangled Bavarian to gibberish (worse than Groq's Whisper).
+  // Scores RAISED after real-audio testing (2026-06-07) but kept BELOW Groq. On REAL
+  // clear/standard German (and a read-aloud Bavarian fairy tale) Voxtral was excellent
+  // and Large/Small both translated accurately — far better than the synthetic test
+  // suggested. BUT on spontaneous dialect Voxtral still errs: it misheard "Bairisch"
+  // as "ein paar Deutsch" (a meaning flip) where Whisper got it right — so it sits a
+  // notch under Groq. Voxtral is shared by both models; the model only changes cleanup.
   models: [
-    { id: 'mistral-large-latest', label: 'Mistral Large', score: 58, quota: 'free tier' },
-    { id: 'mistral-small-latest', label: 'Mistral Small (faster)', score: 55, quota: 'free tier' },
+    { id: 'mistral-large-latest', label: 'Mistral Large — best cleanup', score: 60, quota: 'free tier' },
+    { id: 'mistral-small-latest', label: 'Mistral Small (faster)', score: 56, quota: 'free tier' },
   ],
   defaultModel: 'mistral-large-latest',
   allowCustomModel: true,

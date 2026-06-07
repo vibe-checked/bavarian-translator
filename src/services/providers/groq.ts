@@ -1,7 +1,7 @@
 import { File } from 'expo-file-system';
 import type { TranslateResult } from '../../types';
 import type { TranslateInput, TranslationProvider } from './types';
-import { transcriptInstruction, parseResult, httpError } from './prompt';
+import { transcriptInstruction, parseResult, httpError, retryAfterSeconds, isLikelyNonSpeech } from './prompt';
 
 // Groq does speech in two steps: Whisper transcription, then an LLM translates.
 const TRANSCRIBE_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
@@ -28,6 +28,7 @@ async function transcribe(input: TranslateInput): Promise<string> {
     method: 'POST',
     headers: { Authorization: `Bearer ${input.apiKey}` },
     body: form,
+    signal: input.signal,
   });
   if (!res.ok) {
     let detail = '';
@@ -36,7 +37,7 @@ async function transcribe(input: TranslateInput): Promise<string> {
     } catch {
       /* ignore */
     }
-    throw httpError('Groq (transcribe)', res.status, detail);
+    throw httpError('Groq (transcribe)', res.status, detail, retryAfterSeconds(res));
   }
   const json = await res.json();
   return (json?.text ?? '').trim();
@@ -44,7 +45,7 @@ async function transcribe(input: TranslateInput): Promise<string> {
 
 async function translate(input: TranslateInput): Promise<TranslateResult> {
   const transcript = await transcribe(input);
-  if (!transcript) return { detected: 'other', bavarian: false, de: '', en: '' };
+  if (isLikelyNonSpeech(transcript)) return { detected: 'other', bavarian: false, de: '', en: '' };
 
   const res = await fetch(CHAT_URL, {
     method: 'POST',
@@ -58,6 +59,7 @@ async function translate(input: TranslateInput): Promise<TranslateResult> {
         { role: 'user', content: `Transcript: "${transcript}"` },
       ],
     }),
+    signal: input.signal,
   });
   if (!res.ok) {
     let detail = '';
@@ -66,7 +68,7 @@ async function translate(input: TranslateInput): Promise<TranslateResult> {
     } catch {
       /* ignore */
     }
-    throw httpError('Groq', res.status, detail);
+    throw httpError('Groq', res.status, detail, retryAfterSeconds(res));
   }
   const json = await res.json();
   const text: string | undefined = json?.choices?.[0]?.message?.content;
@@ -81,12 +83,18 @@ export const groqProvider: TranslationProvider = {
   apiKeyUrl: 'https://console.groq.com/keys',
   keyHint:
     'Free key with a generous quota. Whisper transcribes, then your chosen model translates with Bavarian cleanup.',
-  // Bavarian quality is capped by the fixed Whisper transcribe step (great at
-  // standard German, weak on heavy dialect) — so all translate models score similarly.
+  // Scores RAISED after real-audio testing (2026-06-07): the old synthetic `say`-voice
+  // test had unfairly tanked Whisper. On REAL Bavarian (incl. spontaneous dialect from
+  // a YouTube clip) Whisper-large-v3 proved robust — it correctly transcribed "Pfiat
+  // euch", "Ich kann nur Bairisch" and dialectal word order, and the translations were
+  // accurate. Whisper is shared across these models, so the translate model only changes
+  // the cleanup (Llama 3.3 best, Scout close, Qwen3 a touch behind → small spread).
+  // Still set below Gemini pending a real heavy-dialect head-to-head (Gemini quota-blocked
+  // on test day). Huge free quota makes this the best practical everyday default.
   models: [
-    { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B', score: 60, quota: '1000s/day free' },
-    { id: 'qwen/qwen3-32b', label: 'Qwen3 32B (multilingual)', score: 60, quota: '1000s/day free' },
-    { id: 'meta-llama/llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout', score: 60, quota: '1000s/day free' },
+    { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B — best cleanup', score: 70, quota: '1000s/day free' },
+    { id: 'meta-llama/llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout', score: 67, quota: '1000s/day free' },
+    { id: 'qwen/qwen3-32b', label: 'Qwen3 32B', score: 65, quota: '1000s/day free' },
   ],
   defaultModel: 'llama-3.3-70b-versatile',
   allowCustomModel: true,

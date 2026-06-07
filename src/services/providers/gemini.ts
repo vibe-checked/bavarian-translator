@@ -1,6 +1,6 @@
 import type { TranslateResult } from '../../types';
 import type { TranslateInput, TranslationProvider } from './types';
-import { audioInstruction, parseResult, httpError } from './prompt';
+import { audioInstruction, parseResult, httpError, retryAfterSeconds } from './prompt';
 
 const ENDPOINT = (model: string, key: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
@@ -41,6 +41,7 @@ async function translate(input: TranslateInput): Promise<TranslateResult> {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
+      signal: input.signal,
     });
   } catch (e: any) {
     throw new Error(`Network error reaching Gemini: ${e?.message ?? e}`);
@@ -49,11 +50,21 @@ async function translate(input: TranslateInput): Promise<TranslateResult> {
   if (!res.ok) {
     let detail = '';
     try {
-      detail = (await res.json())?.error?.message ?? '';
+      const err = (await res.json())?.error;
+      // Gemini puts the per-DAY/per-minute marker in details[].violations[].quotaId
+      // (e.g. "GenerateRequestsPerDayPerProjectPerModel-FreeTier"), NOT in `message`.
+      // Fold it into `detail` so the cooldown layer can tell a daily cap (park ~1h)
+      // from a per-minute throttle — the human message alone can't.
+      const quotaIds = (err?.details ?? [])
+        .flatMap((d: any) => d?.violations ?? [])
+        .map((v: any) => v?.quotaId)
+        .filter(Boolean)
+        .join(' ');
+      detail = [err?.message ?? '', quotaIds].filter(Boolean).join(' · ');
     } catch {
       /* ignore */
     }
-    throw httpError('Gemini', res.status, detail);
+    throw httpError('Gemini', res.status, detail, retryAfterSeconds(res));
   }
 
   const json = await res.json();
@@ -70,9 +81,16 @@ export const geminiProvider: TranslationProvider = {
   keyHint: 'Free key from Google AI Studio — no credit card. Best Bavarian understanding.',
   // 2.5 Pro is omitted: it's paid-only on the free tier (limit:0). 3.x return 404
   // on a free key. So Flash is the best Gemini that actually runs for free.
+  // Both models hear the audio directly (unlike Groq/Mistral, no shared transcribe),
+  // so they genuinely differ. Audio test: Flash was the ONLY model in the whole test
+  // to correctly render the moderate-Bavarian clip; Flash-Lite was faster but more
+  // erratic (sometimes plausible, sometimes hallucinated) — hence the gap.
+  // NOTE (2026-06-07): scores kept from the earlier test — Gemini's free daily quota
+  // was exhausted during real-audio testing, so its REAL spontaneous-dialect quality
+  // is still UNCONFIRMED (Groq's was validated and raised). Pending a real head-to-head.
   models: [
-    { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash — best free', score: 86, quota: '~20/day free' },
-    { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite — fastest', score: 80, quota: 'free · daily cap' },
+    { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash — best free', score: 82, quota: '~20/day free' },
+    { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite — fastest', score: 72, quota: 'free · daily cap' },
   ],
   defaultModel: 'gemini-2.5-flash',
   allowCustomModel: true,

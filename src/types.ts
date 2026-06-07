@@ -29,6 +29,13 @@ export interface Settings {
   engineModels: Record<string, string>;
   /** Per-provider API key, stored on this device. */
   engineKeys: Record<string, string>;
+  /**
+   * Rate-limit cooldowns. Maps "engineId:modelId" → epoch ms until which that
+   * model is parked (because it hit a quota/429). While parked it's skipped by
+   * the auto-failover and greyed out in Settings; once the time passes it's
+   * retried automatically (so it self-heals when the quota resets).
+   */
+  cooldowns: Record<string, number>;
 
   /** Speak the translation aloud automatically after each turn. */
   autoSpeak: boolean;
@@ -74,10 +81,11 @@ export const DEFAULT_SETTINGS: Settings = {
     groq: process.env.EXPO_PUBLIC_GROQ_API_KEY ?? '',
     mistral: process.env.EXPO_PUBLIC_MISTRAL_API_KEY ?? '',
   },
+  cooldowns: {},
 
   autoSpeak: true,
   germanSlow: true,
-  germanSlowRate: 0.45,
+  germanSlowRate: 0.3,
   germanNormalRate: 0.9,
   englishRate: 1.0,
   germanVoiceId: '',

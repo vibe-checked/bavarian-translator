@@ -40,9 +40,11 @@ Every model listed was tested to **work for free on the user's own key** — no 
 
 | Engine | Tier | How it works | Get a key |
 | --- | --- | --- | --- |
-| **Google Gemini** *(default)* | FREE | Single multimodal model hears the audio + translates. `2.5 Flash` (≈86, ~20/day free, default) or `2.5 Flash-Lite` (fastest). **Best Bavarian.** | https://aistudio.google.com/apikey |
-| **Groq** (Whisper + Llama) | FREE | Whisper transcribes, then Llama/Qwen translates. Huge quota, fast — **great standard German but weak on heavy dialect** (Whisper bottleneck, ≈60). | https://console.groq.com/keys |
-| **Mistral** (Voxtral) | FREE TIER | Voxtral transcribes, then a Mistral model translates (≈58). European; free experiment tier. Weakest on dialect. | https://console.mistral.ai/api-keys |
+| **Google Gemini** *(default)* | FREE | Single multimodal model hears the audio + translates. `2.5 Flash` (**82**, ~20/day, default) or `2.5 Flash-Lite` (**72**, faster but more erratic). Both hear the audio directly, so they genuinely differ. Presumed **best Bavarian**, but its real-dialect score is *pending* (quota was exhausted during the real-audio retest). | https://aistudio.google.com/apikey |
+| **Groq** (Whisper + Llama) | FREE | Whisper transcribes, then a model translates. All models share the **same** Whisper step, so they only differ in cleanup: `Llama 3.3 70B` (**70**) > `Llama 4 Scout` (**67**) > `Qwen3 32B` (**65**). **Whisper proved robust on real Bavarian** (incl. spontaneous dialect) — plus a huge free quota, making this the best practical everyday engine. | https://console.groq.com/keys |
+| **Mistral** (Voxtral) | FREE TIER | Voxtral transcribes, then a model translates. Shared Voxtral step: `Mistral Large` (**60**) > `Mistral Small` (**56**). Excellent on clear German, but Voxtral still **slips on spontaneous dialect** (misheard "Bairisch" as "a little German"), so it sits below Groq. European; free experiment tier. | https://console.mistral.ai/api-keys |
+
+*Scores (0–100, Bavarian-weighted, comparable across providers) were **updated 2026-06-07 from real-audio testing** — real German/Bavarian YouTube clips (standard "Easy German", a grandma reading a fairy tale, and spontaneous Bavarian dialect), not the earlier synthetic `say` voice. That synthetic voice had unfairly punished the two-step engines; on real audio **Groq/Whisper proved robust even on spontaneous dialect** (so Groq jumped from ~57 to 70), while **Mistral/Voxtral is great on clear German but still slips on dialect** (a "Bairisch" → "a little German" mishearing), keeping it below Groq. **Gemini's scores are unchanged and still UNCONFIRMED on real dialect** — its free quota was exhausted during the retest, so a real three-way head-to-head is pending. Within Groq/Mistral the models share one transcribe step, so the per-model spread is small.*
 
 *Removed: **OpenAI** (paid-only) and **OpenRouter** (every model — even its `:free` ones — needs a ≥$0.50 prepaid balance for audio, so none work on a $0 key). **Gemini 2.5 Pro** is omitted too — it's paid-only on the free tier.* Each engine has a **Custom model id** field for any other model its key can reach.
 
@@ -95,7 +97,8 @@ Switch with the **Tap | Auto | Live** control in the center bar.
 
 ## Notes & honest limitations
 
-- **Internet required** for translation (the engine is a cloud call). Free tiers have generous limits; if you hit one you'll see a friendly “try again in a moment” notice.
+- **Internet required** for translation (the engine is a cloud call). Errors and timeouts now show an on-screen toast (red = needs attention, yellow = soft "didn't catch that").
+- **Automatic failover on rate limits.** If a model hits its quota (or times out), the app instantly retries with the next best model — other models in the same engine first (Gemini's two have *separate* daily quotas), then another engine — and shows a brief "⚡ switched to …" note. The exhausted model is **greyed out in Settings with a countdown**, then retried automatically; because selection is always "your preferred engine if available, else the best one that is," it **switches back on its own** when the limit clears. The cooldown length is taken from the API's own signal: a `Retry-After` header is honored exactly, a per-minute throttle (e.g. Mistral free = 4 req/min) waits ~90s, and only a true per-day quota (e.g. Gemini free ~20/day) waits the full hour. You can also **tap a greyed model/engine to retry it immediately**.
 - Two modes: **Tap** (button per turn — most reliable) and **Auto** (always-listening, hands-free). Auto is half-duplex (one person at a time) and relies on silence detection, so it shines in a quiet room and a calm back-and-forth.
 - **Bavarian comprehension is strong; Bavarian voice *output* is approximate** unless you use the ElevenLabs option. This is a real limitation of available speech engines, not a bug.
 

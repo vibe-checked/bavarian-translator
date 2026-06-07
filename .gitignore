@@ -42,3 +42,6 @@ yarn-error.*
 
 # local secrets (explicit)
 .env
+
+# Local dialect re-test fixtures (audio clips + script)
+.dialect-retest/

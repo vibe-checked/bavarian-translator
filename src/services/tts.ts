@@ -170,8 +170,37 @@ export async function loadVoices(): Promise<{ german: VoiceInfo[]; english: Voic
     .filter((v) => v.language?.toLowerCase().startsWith('de'))
     // de-AT (Austrian) and de-CH sound closer to Bavarian — surface them first.
     .sort((a, b) => rankGerman(b) - rankGerman(a));
-  const english = voices.filter((v) => v.language?.toLowerCase().startsWith('en'));
+  const english = pickDistinctEnglish(voices.filter((v) => v.language?.toLowerCase().startsWith('en')));
   return { german, english };
+}
+
+const isEnhanced = (v: VoiceInfo) => !!v.quality && /enhanced|premium/i.test(v.quality);
+
+/**
+ * The English picker doesn't need every installed voice — just a few clearly
+ * DIFFERENT ones. Pick the best-quality voice from up to three distinct accent
+ * regions (US → UK → Australian → …), so the choices sound genuinely different.
+ */
+export function pickDistinctEnglish(voices: VoiceInfo[]): VoiceInfo[] {
+  const order = ['en-us', 'en-gb', 'en-au', 'en-ie', 'en-in', 'en-za'];
+  const bestByRegion = new Map<string, VoiceInfo>();
+  for (const v of voices) {
+    const lang = (v.language ?? '').toLowerCase();
+    const cur = bestByRegion.get(lang);
+    if (!cur || (isEnhanced(v) && !isEnhanced(cur))) bestByRegion.set(lang, v);
+  }
+  const picked: VoiceInfo[] = [];
+  for (const region of order) {
+    const v = bestByRegion.get(region);
+    if (v) picked.push(v);
+    if (picked.length === 3) return picked;
+  }
+  // Fewer than three regions installed → top up with any other distinct voices.
+  for (const v of voices) {
+    if (picked.length === 3) break;
+    if (!picked.some((p) => p.identifier === v.identifier || p.name === v.name)) picked.push(v);
+  }
+  return picked;
 }
 
 function rankGerman(v: VoiceInfo): number {

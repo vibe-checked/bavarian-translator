@@ -7,7 +7,7 @@ import type { Lang, Utterance } from './src/types';
 import { useSettings } from './src/hooks/useSettings';
 import { useRecorder, type RecordedClip } from './src/hooks/useRecorder';
 import { useAutoListener } from './src/hooks/useAutoListener';
-import { translateAudio, selectedKey } from './src/services/providers';
+import { translateAudio, selectedKey, type TranslateOutcome } from './src/services/providers';
 import { speak, speakAsync, stopSpeaking, loadVoices, type VoiceInfo } from './src/services/tts';
 import { Pane } from './src/components/Pane';
 import { SettingsSheet } from './src/components/SettingsSheet';
@@ -20,6 +20,11 @@ const GERMAN = '#C8102E';
 const ENGLISH = '#1D5FB8';
 
 type AutoPhase = 'translating' | 'speaking' | null;
+type NoticeKind = 'info' | 'error' | 'switch';
+interface Notice {
+  text: string;
+  kind: NoticeKind;
+}
 
 export default function App() {
   const { settings, ready, update } = useSettings();
@@ -29,7 +34,7 @@ export default function App() {
   const [activePane, setActivePane] = useState<Lang | null>(null); // pane currently recording (tap mode)
   const [busyPane, setBusyPane] = useState<Lang | null>(null); // pane currently translating (tap mode)
   const [autoPhase, setAutoPhase] = useState<AutoPhase>(null);
-  const [notice, setNotice] = useState<string | null>(null);
+  const [notice, setNotice] = useState<Notice | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [voices, setVoices] = useState<{ german: VoiceInfo[]; english: VoiceInfo[] }>({
     german: [],
@@ -56,19 +61,52 @@ export default function App() {
       createdAt: Date.now(),
     };
     setUtterances((prev) => [...prev, u]);
-    setNotice(null);
+    clearNotice();
     return u;
   }
 
-  // A short message that clears itself after a few seconds (for soft "didn't
-  // catch that" feedback, so it never lingers in the always-listening modes).
-  function flashNotice(message: string) {
-    setNotice(message);
+  // One place for all on-screen toasts. Errors stay until dismissed; soft and
+  // success notes clear themselves so they never linger in always-listening modes.
+  function showNotice(text: string, kind: NoticeKind, autoMs?: number) {
+    setNotice({ text, kind });
     if (noticeTimer.current) clearTimeout(noticeTimer.current);
-    noticeTimer.current = setTimeout(
-      () => setNotice((cur) => (cur === message ? null : cur)),
-      3500,
-    );
+    if (autoMs) {
+      noticeTimer.current = setTimeout(
+        () => setNotice((cur) => (cur?.text === text ? null : cur)),
+        autoMs,
+      );
+    }
+  }
+  const showError = (m: string) => showNotice(m, 'error'); // sticky — needs a read
+  const showInfo = (m: string) => showNotice(m, 'info', 3500); // soft "didn't catch that"
+  const showSwitch = (m: string) => showNotice(m, 'switch', 5000); // auto-failover to another engine
+  function clearNotice() {
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    setNotice(null);
+  }
+
+  // Persist any cooldowns the failover discovered, and tell the user when it had
+  // to switch away from their chosen engine.
+  function applyOutcome(o: TranslateOutcome) {
+    const hitLimit = Object.keys(o.cooldowns).length > 0;
+    if (hitLimit) {
+      update((prev) => ({ cooldowns: { ...prev.cooldowns, ...o.cooldowns } }));
+    }
+    const switched =
+      o.used.engineId !== o.preferred.engineId || o.used.model !== o.preferred.model;
+    // Only announce at the MOMENT of switching (a fresh 429 this call). On later
+    // chunks we keep riding the fallback silently — no per-chunk toast spam.
+    if (switched && hitLimit) {
+      const to = o.used.engineId === o.preferred.engineId ? o.used.modelLabel : o.used.engineLabel;
+      showSwitch(`⚡ ${o.preferred.engineLabel} hit its limit — kept going with ${to}`);
+    }
+  }
+  // translateAudio only throws when EVERY engine failed; still persist whatever
+  // cooldowns it learned, then surface the (already-friendly) message.
+  function handleTranslateError(e: any) {
+    const cd = e?.cooldowns;
+    if (cd && Object.keys(cd).length) update((prev) => ({ cooldowns: { ...prev.cooldowns, ...cd } }));
+    showError(errMsg(e));
   }
 
   const COULDNT = "🔇 Nicht verstanden · Didn't catch that";
@@ -80,29 +118,31 @@ export default function App() {
       try {
         clip = await recorder.stop();
       } catch (e) {
-        setNotice(errMsg(e));
+        showError(errMsg(e));
         setActivePane(null);
         return;
       }
       setActivePane(null);
       if (!clip) {
-        setNotice('No audio captured — try holding a little longer.');
+        showInfo('No audio captured — try holding a little longer.');
         return;
       }
       setBusyPane(pane);
       try {
-        const res = await translateAudio(settings, clip, pane);
+        const outcome = await translateAudio(settings, clip, pane);
+        applyOutcome(outcome);
+        const res = outcome.result;
         if (!res.de && !res.en) {
-          flashNotice(pane === 'de' ? '🔇 Hab ich nicht verstanden — nochmal?' : "🔇 Didn't catch that — try again");
+          showInfo(pane === 'de' ? '🔇 Hab ich nicht verstanden — nochmal?' : "🔇 Didn't catch that — try again");
           return;
         }
         const u = addUtterance(res, pane);
         if (settings.autoSpeak) {
-          if (u.speaker === 'de') speak(u.en, 'en', settings, { onError: setNotice });
-          else speak(u.de, 'de', settings, { onError: setNotice });
+          if (u.speaker === 'de') speak(u.en, 'en', settings, { onError: showError });
+          else speak(u.de, 'de', settings, { onError: showError });
         }
       } catch (e) {
-        setNotice(errMsg(e));
+        handleTranslateError(e);
       } finally {
         setBusyPane(null);
       }
@@ -114,9 +154,9 @@ export default function App() {
     try {
       await recorder.start();
       setActivePane(pane);
-      setNotice(null);
+      clearNotice();
     } catch (e) {
-      setNotice(errMsg(e));
+      showError(errMsg(e));
     }
   }
 
@@ -124,9 +164,11 @@ export default function App() {
   async function handleAutoSegment(clip: RecordedClip) {
     setAutoPhase('translating');
     try {
-      const res = await translateAudio(settings, clip, 'auto');
+      const outcome = await translateAudio(settings, clip, 'auto');
+      applyOutcome(outcome);
+      const res = outcome.result;
       if (!res.de && !res.en) {
-        flashNotice(COULDNT); // heard speech but couldn't translate it
+        showInfo(COULDNT); // heard speech but couldn't translate it
         return;
       }
       const u = addUtterance(res, 'de');
@@ -136,9 +178,8 @@ export default function App() {
         else await speakAsync(u.de, 'de', settings);
       }
     } catch (e) {
-      const m = errMsg(e);
-      setNotice(m);
-      if (/No API key/i.test(m)) update({ conversationMode: 'tap' }); // stop spamming failures
+      handleTranslateError(e);
+      if (/No API key/i.test(errMsg(e))) update({ conversationMode: 'tap' }); // stop spamming failures
     } finally {
       setAutoPhase(null);
     }
@@ -166,17 +207,18 @@ export default function App() {
       while (liveQueue.current.length) {
         const clip = liveQueue.current.shift()!;
         try {
-          const res = await translateAudio(settings, clip, 'auto');
+          const outcome = await translateAudio(settings, clip, 'auto', { timeoutMs: 12000 });
+          applyOutcome(outcome);
+          const res = outcome.result;
           if (res.de || res.en) addUtterance(res, 'de'); // single worker ⇒ in order
-          else flashNotice(COULDNT); // heard speech but couldn't translate it
+          else showInfo(COULDNT); // heard speech but couldn't translate it
         } catch (e) {
-          const m = errMsg(e);
-          setNotice(m);
-          if (/No API key/i.test(m)) {
-            liveQueue.current = [];
-            update({ conversationMode: 'tap' });
-            break;
-          }
+          // A throw here means every engine failed — drop the backlog so we don't
+          // replay the same failure on each queued chunk.
+          handleTranslateError(e);
+          liveQueue.current = [];
+          if (/No API key/i.test(errMsg(e))) update({ conversationMode: 'tap' });
+          break;
         }
       }
     } finally {
@@ -191,7 +233,7 @@ export default function App() {
     thresholdDb: settings.autoSpeechThresholdDb,
     onSegment: liveMode ? enqueueLive : handleAutoSegment,
     onError: (m) => {
-      setNotice(m);
+      showError(m);
       if (/permission/i.test(m)) update({ conversationMode: 'tap' });
     },
   });
@@ -199,7 +241,7 @@ export default function App() {
   async function setMode(mode: 'tap' | 'auto' | 'live') {
     if (mode === settings.conversationMode) return;
     if (mode !== 'tap' && !selectedKey(settings)) {
-      setNotice('Add an API key first (⚙︎ → Translation engine) to use hands-free modes.');
+      showError('Add an API key first (⚙︎ → Translation engine) to use hands-free modes.');
       return;
     }
     stopSpeaking();
@@ -214,7 +256,7 @@ export default function App() {
     setActivePane(null);
     setBusyPane(null);
     setAutoPhase(null);
-    setNotice(null);
+    clearNotice();
     update({ conversationMode: mode });
   }
 
@@ -233,7 +275,8 @@ export default function App() {
   return (
     <SafeAreaProvider>
       <StatusBar style="dark" />
-      <SafeAreaView style={styles.root} edges={['top', 'bottom']}>
+      <View style={styles.root}>
+        <SafeAreaView edges={['top']} style={styles.paneWrapTop}>
         <Pane
           lang="de"
           title="Deutsch · Oma"
@@ -245,14 +288,16 @@ export default function App() {
           flipped={settings.faceToFace}
           accent={GERMAN}
           bg="#FFF6F2"
-          fontSize={24}
+          fontSize={28}
           micIdle="🎤  Sprechen"
           micRecording="■  Fertig"
           micBusy="Übersetze…"
           showMic={!listening}
+          mode={settings.conversationMode}
           onMic={() => handleMic('de')}
-          onReplay={(u) => speak(u.de, 'de', settings, { onError: setNotice })}
+          onReplay={(u) => speak(u.de, 'de', settings, { onError: showError })}
         />
+        </SafeAreaView>
 
         <View style={styles.divider}>
           <Pressable style={styles.iconBtn} onPress={() => setSettingsOpen(true)}>
@@ -282,7 +327,7 @@ export default function App() {
             onPress={() => {
               stopSpeaking();
               setUtterances([]);
-              setNotice(null);
+              clearNotice();
             }}
           >
             <Text style={styles.iconText}>🗑</Text>
@@ -306,14 +351,7 @@ export default function App() {
           )}
         </View>
 
-        {notice ? (
-          <Pressable onPress={() => setNotice(null)} style={styles.notice}>
-            <Text style={styles.noticeText} numberOfLines={2}>
-              {notice}  (tap to dismiss)
-            </Text>
-          </Pressable>
-        ) : null}
-
+        <SafeAreaView edges={['bottom']} style={styles.paneWrapBottom}>
         <Pane
           lang="en"
           title="English"
@@ -324,14 +362,28 @@ export default function App() {
           disabled={englishDisabled}
           accent={ENGLISH}
           bg="#F2F6FF"
-          fontSize={20}
+          fontSize={24}
           micIdle="🎤  Speak"
           micRecording="■  Done"
           micBusy="Translating…"
           showMic={!listening}
+          mode={settings.conversationMode}
           onMic={() => handleMic('en')}
-          onReplay={(u) => speak(u.en, 'en', settings, { onError: setNotice })}
+          onReplay={(u) => speak(u.en, 'en', settings, { onError: showError })}
         />
+        </SafeAreaView>
+
+        {/* Floating toast — centered over the divider, not attached to either pane. */}
+        {notice ? (
+          <View style={styles.noticeOverlay} pointerEvents="box-none">
+            <Pressable onPress={clearNotice} style={[styles.noticePill, NOTICE_STYLE[notice.kind].box]}>
+              <Text style={[styles.noticeText, NOTICE_STYLE[notice.kind].text]} numberOfLines={3}>
+                {notice.text}
+                {notice.kind === 'error' ? '  (tap to dismiss)' : ''}
+              </Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <SettingsSheet
           visible={settingsOpen}
@@ -341,18 +393,18 @@ export default function App() {
           voices={voices}
           onTestGerman={() =>
             speak('Grüß di! Schee, dass’d da bist. Wia geht’s da denn heid?', 'de', settings, {
-              onError: setNotice,
+              onError: showError,
             })
           }
           onTestEnglish={() =>
             speak('Hello! Nice to see you. How are you doing today?', 'en', settings, {
-              onError: setNotice,
+              onError: showError,
             })
           }
         />
 
         {!ready ? <View style={styles.loadingVeil} /> : null}
-      </SafeAreaView>
+      </View>
     </SafeAreaProvider>
   );
 }
@@ -392,7 +444,11 @@ function AutoStatus({
 }
 
 const styles = StyleSheet.create({
-  root: { flex: 1, backgroundColor: '#fff' },
+  root: { flex: 1, backgroundColor: '#1A1A1A' },
+  // Each pane gets its own safe-area wrapper so the inset (notch / home indicator)
+  // is filled with that pane's color — no white gap above German or below English.
+  paneWrapTop: { flex: 1, backgroundColor: '#FFF6F2' },
+  paneWrapBottom: { flex: 1, backgroundColor: '#F2F6FF' },
   divider: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -445,8 +501,35 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   meterFill: { backgroundColor: '#34C759' },
-  notice: { backgroundColor: '#FFE08A', paddingHorizontal: 14, paddingVertical: 8 },
-  noticeText: { color: '#5A4500', fontSize: 13, fontWeight: '600' },
+  // Floating toast: a centered overlay that lets taps pass through except on the pill.
+  noticeOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  noticePill: {
+    maxWidth: '88%',
+    paddingHorizontal: 18,
+    paddingVertical: 12,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOpacity: 0.22,
+    shadowRadius: 10,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 6,
+  },
+  noticeText: { fontSize: 14, fontWeight: '700', textAlign: 'center' },
+  noticeInfoBox: { backgroundColor: '#FFE08A' },
+  noticeInfoText: { color: '#5A4500' },
+  noticeErrorBox: { backgroundColor: '#FFD8D6' },
+  noticeErrorText: { color: '#8A1C13' },
+  // Failover toast — same soft pill as "didn't catch that", a calm blue instead of yellow.
+  noticeSwitchBox: { backgroundColor: '#D7E7FF' },
+  noticeSwitchText: { color: '#0A3D8F' },
   loadingVeil: {
     position: 'absolute',
     top: 0,
@@ -456,3 +539,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
   },
 });
+
+// Toast colors by severity (defined after `styles` so it can reference them).
+const NOTICE_STYLE: Record<NoticeKind, { box: object; text: object }> = {
+  info: { box: styles.noticeInfoBox, text: styles.noticeInfoText },
+  error: { box: styles.noticeErrorBox, text: styles.noticeErrorText },
+  switch: { box: styles.noticeSwitchBox, text: styles.noticeSwitchText },
+};

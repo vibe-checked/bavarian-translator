@@ -4,10 +4,12 @@ import { DEFAULT_SETTINGS, type Settings } from '../types';
 
 const KEY = 'bt.settings.v1';
 
+export type SettingsPatch = Partial<Settings> | ((prev: Settings) => Partial<Settings>);
+
 export interface SettingsStore {
   settings: Settings;
   ready: boolean;
-  update: (patch: Partial<Settings>) => void;
+  update: (patch: SettingsPatch) => void;
 }
 
 export function useSettings(): SettingsStore {
@@ -43,9 +45,10 @@ export function useSettings(): SettingsStore {
     };
   }, []);
 
-  const update = useCallback((patch: Partial<Settings>) => {
+  const update = useCallback((patch: SettingsPatch) => {
     setSettings((prev) => {
-      const next = { ...prev, ...patch };
+      const resolved = typeof patch === 'function' ? patch(prev) : patch;
+      const next = { ...prev, ...resolved };
       AsyncStorage.setItem(KEY, JSON.stringify(next)).catch(() => {});
       return next;
     });

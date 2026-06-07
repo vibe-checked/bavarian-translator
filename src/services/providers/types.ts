@@ -13,6 +13,8 @@ export interface TranslateInput extends AudioClip {
   expected: Expected;
   model: string;
   apiKey: string;
+  /** Abort signal from the timeout layer — pass straight to fetch(). */
+  signal?: AbortSignal;
 }
 
 export interface ModelOption {
