@@ -97,8 +97,10 @@ export default function App() {
     // Only announce at the MOMENT of switching (a fresh 429 this call). On later
     // chunks we keep riding the fallback silently — no per-chunk toast spam.
     if (switched && hitLimit) {
-      const to = o.used.engineId === o.preferred.engineId ? o.used.modelLabel : o.used.engineLabel;
-      showSwitch(`⚡ ${o.preferred.engineLabel} hit its limit — kept going with ${to}`);
+      // Concise model name without the "— descriptor" suffix (e.g. "Llama 3.3 70B").
+      const shortName = (p: { modelLabel: string }) => p.modelLabel.split(' — ')[0];
+      const from = o.blocked ?? o.preferred; // the model that just hit its limit
+      showSwitch(`⚡ ${shortName(from)} hit its limit — switched to ${shortName(o.used)}`);
     }
   }
   // translateAudio only throws when EVERY engine failed; still persist whatever

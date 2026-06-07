@@ -70,6 +70,11 @@ export function SettingsSheet(props: Props) {
     return () => clearInterval(id);
   }, [props.visible]);
 
+  // What the app would actually use right now (skips cooled models). The ✓ stays
+  // on the user's saved choice; a green "● using" dot follows this live pick so
+  // they can see where failover landed — while the selection still self-heals.
+  const active = firstAvailable(settings, now);
+
   // Manually lift a cooldown (e.g. the user knows the limit has actually reset).
   const clearCooldowns = (keys: string[]) =>
     update((prev) => {
@@ -105,6 +110,7 @@ export function SettingsSheet(props: Props) {
                 key={p.id}
                 provider={p}
                 active={settings.engineId === p.id}
+                nowUsing={!!active && active.engineId === p.id && p.id !== settings.engineId}
                 settings={settings}
                 now={now}
                 onSelect={() => update({ engineId: p.id })}
@@ -282,6 +288,7 @@ function TierBadge({ tier }: { tier: Tier }) {
 function ProviderRow({
   provider,
   active,
+  nowUsing,
   onSelect,
   onRetryNow,
   settings,
@@ -289,6 +296,7 @@ function ProviderRow({
 }: {
   provider: TranslationProvider;
   active: boolean;
+  nowUsing?: boolean;
   onSelect: () => void;
   onRetryNow: () => void;
   settings: Settings;
@@ -310,6 +318,7 @@ function ProviderRow({
         {provider.label}
       </Text>
       <View style={styles.providerRight}>
+        {nowUsing ? <Text style={styles.nowUsing}>● using</Text> : null}
         {cooled ? <Text style={styles.cooldownTag}>⏳ {fmtRemaining(remainingMs)} · tap to retry</Text> : null}
         <TierBadge tier={provider.tier} />
         <ScoreGauge score={Math.max(...provider.models.map((m) => m.score))} />
@@ -371,6 +380,7 @@ function EngineConfig({
           key={m.id}
           model={m}
           active={curModel === m.id}
+          nowUsing={!!fb && fb.engineId === settings.engineId && fb.model === m.id && m.id !== curModel}
           cooled={isCooled(settings, settings.engineId, m.id, now)}
           remainingMs={cooldownUntil(settings, settings.engineId, m.id) - now}
           onPress={() => setModel(m.id)}
@@ -412,6 +422,7 @@ function EngineConfig({
 function ModelRow({
   model,
   active,
+  nowUsing,
   onPress,
   onRetryNow,
   cooled,
@@ -419,6 +430,7 @@ function ModelRow({
 }: {
   model: ModelOption;
   active: boolean;
+  nowUsing?: boolean;
   onPress: () => void;
   onRetryNow?: () => void;
   cooled?: boolean;
@@ -438,6 +450,7 @@ function ModelRow({
         </Text>
       </View>
       <View style={styles.modelRight}>
+        {nowUsing ? <Text style={styles.nowUsing}>● using</Text> : null}
         <ScoreGauge score={model.score} />
         {active ? <Text style={styles.check}>✓</Text> : null}
       </View>
@@ -623,4 +636,5 @@ const styles = StyleSheet.create({
   voiceText: { fontSize: 14, color: '#333', flexShrink: 1, paddingRight: 8 },
   voiceTextActive: { color: '#0059C9', fontWeight: '700' },
   check: { color: '#007AFF', fontSize: 16, fontWeight: '800' },
+  nowUsing: { color: '#0A7A2F', fontSize: 11, fontWeight: '800' },
 });

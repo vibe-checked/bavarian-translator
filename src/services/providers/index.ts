@@ -102,7 +102,10 @@ function candidatesFor(settings: Settings): Candidate[] {
 
   PROVIDERS.filter((p) => p.id !== preferred.id)
     .sort((a, b) => Math.max(...b.models.map((m) => m.score)) - Math.max(...a.models.map((m) => m.score)))
-    .forEach((p) => add(p, settings.engineModels[p.id]?.trim() || p.defaultModel));
+    .forEach((p) => {
+      add(p, settings.engineModels[p.id]?.trim() || p.defaultModel); // its selected/default model first…
+      [...p.models].sort((a, b) => b.score - a.score).forEach((m) => add(p, m.id)); // …then its other models
+    });
 
   return out;
 }
@@ -127,6 +130,12 @@ export interface TranslateOutcome {
   used: EnginePick;
   /** What the user would normally use (their selection). */
   preferred: EnginePick;
+  /**
+   * The next-higher-priority candidate that was unavailable (the one `used` fell
+   * back FROM) — i.e. the model that just hit its limit. null when no failover
+   * happened. Used to word the "switched" toast precisely.
+   */
+  blocked: EnginePick | null;
   /** Models newly parked on cooldown during this call → caller persists these. */
   cooldowns: Record<string, number>;
 }
@@ -223,10 +232,17 @@ export async function translateAudio(
   for (const c of queue) {
     try {
       const result = await attempt(c, clip, expected, timeoutMs);
+      // The candidate ranked just above the one that worked is what we fell back
+      // FROM (it was cooled or just 429'd) — name it as "hit its limit" in the toast.
+      const idx = all.findIndex((x) => x.engineId === c.engineId && x.model === c.model);
+      const b = idx > 0 ? all[idx - 1] : null;
       return {
         result,
         used: { engineId: c.engineId, model: c.model, engineLabel: c.engineLabel, modelLabel: c.modelLabel },
         preferred,
+        blocked: b
+          ? { engineId: b.engineId, model: b.model, engineLabel: b.engineLabel, modelLabel: b.modelLabel }
+          : null,
         cooldowns,
       };
     } catch (e: any) {
