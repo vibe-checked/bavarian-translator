@@ -7,6 +7,7 @@ import type { Lang, Utterance } from './src/types';
 import { useSettings } from './src/hooks/useSettings';
 import { useRecorder, type RecordedClip } from './src/hooks/useRecorder';
 import { useAutoListener } from './src/hooks/useAutoListener';
+import { useKeepScreenAwake } from './src/hooks/useKeepScreenAwake';
 import { translateAudio, selectedKey, type TranslateOutcome } from './src/services/providers';
 import { speak, speakAsync, stopSpeaking, loadVoices, type VoiceInfo } from './src/services/tts';
 import { Pane } from './src/components/Pane';
@@ -45,6 +46,10 @@ export default function App() {
   const autoMode = settings.conversationMode === 'auto';
   const liveMode = settings.conversationMode === 'live';
   const listening = autoMode || liveMode; // hands-free modes that drive the mic loop
+
+  // Keep the screen awake during hands-free listening — otherwise iOS dims and
+  // locks it after a few seconds (no touches), cutting the mic loop short.
+  useKeepScreenAwake(listening);
 
   useEffect(() => {
     loadVoices().then(setVoices).catch(() => {});
