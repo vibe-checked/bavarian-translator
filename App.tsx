@@ -29,7 +29,7 @@ interface Notice {
 
 export default function App() {
   const { settings, ready, update } = useSettings();
-  const recorder = useRecorder();
+  const recorder = useRecorder(settings.backgroundListening);
 
   const [utterances, setUtterances] = useState<Utterance[]>([]);
   const [activePane, setActivePane] = useState<Lang | null>(null); // pane currently recording (tap mode)

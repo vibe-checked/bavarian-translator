@@ -48,10 +48,13 @@ export interface Recorder {
   getMetering: () => number;
 }
 
-export function useRecorder(): Recorder {
+export function useRecorder(backgroundListening = false): Recorder {
   const recorder = useAudioRecorder(WAV_16K);
   const [isRecording, setIsRecording] = useState(false);
   const grantedRef = useRef(false);
+  // Latest value available to start() without re-creating the recorder.
+  const backgroundRef = useRef(backgroundListening);
+  backgroundRef.current = backgroundListening;
 
   async function ensurePermission(): Promise<boolean> {
     if (grantedRef.current) return true;
@@ -64,7 +67,7 @@ export function useRecorder(): Recorder {
     if (!(await ensurePermission())) {
       throw new Error('Microphone permission denied. Enable it in Settings → BavarianTranslator.');
     }
-    await ensurePlayAndRecord(); // set the session once; do not toggle per chunk
+    await ensurePlayAndRecord(backgroundRef.current); // keep session alive in bg when enabled
     await recorder.prepareToRecordAsync();
     recorder.record();
     setIsRecording(true);

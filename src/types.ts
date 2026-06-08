@@ -62,6 +62,12 @@ export interface Settings {
   conversationMode: 'tap' | 'auto' | 'live';
   /** Auto-mode voice threshold in dBFS — above this counts as speech. Lower = more sensitive. */
   autoSpeechThresholdDb: number;
+  /**
+   * Keep listening/translating in Auto & Live even when the app is backgrounded
+   * or the screen is locked. Off by default — when on it keeps the mic + network
+   * active in the background, which uses more battery.
+   */
+  backgroundListening: boolean;
 
   /** Optional ElevenLabs key for a more natural / Bavarian German voice. */
   elevenLabsApiKey: string;
@@ -94,6 +100,7 @@ export const DEFAULT_SETTINGS: Settings = {
 
   conversationMode: 'tap',
   autoSpeechThresholdDb: -35,
+  backgroundListening: false,
 
   elevenLabsApiKey: process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY ?? '',
   elevenLabsVoiceId: process.env.EXPO_PUBLIC_ELEVENLABS_VOICE_ID ?? '',

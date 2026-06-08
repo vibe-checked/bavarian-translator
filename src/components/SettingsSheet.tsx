@@ -213,6 +213,18 @@ export function SettingsSheet(props: Props) {
                 />
               ))}
             </View>
+
+            <ToggleRow
+              label="Keep listening in the background"
+              value={settings.backgroundListening}
+              onValueChange={(v) => update({ backgroundListening: v })}
+            />
+            <Text style={styles.help}>
+              Off by default. When on, Auto &amp; Live keep listening and translating even after you
+              switch apps or lock the screen — handy for a long conversation, but it keeps the mic and
+              network active, so it uses more battery. Turn it off to have listening pause whenever the
+              app isn’t in front.
+            </Text>
           </Section>
 
           {/* ElevenLabs */}
