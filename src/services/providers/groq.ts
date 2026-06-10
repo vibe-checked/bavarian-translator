@@ -27,10 +27,13 @@ async function transcribe(input: TranslateInput): Promise<string> {
   }
   form.append('response_format', 'json');
   form.append('temperature', '0'); // deterministic — a touch less prone to confabulating on noise
-  // NOTE: no `prompt` hint. Whisper regurgitates its prompt verbatim on silence
-  // (we saw "Gesprochenes Bairisch bzw. Hochdeutsch" come back as a fake bubble),
-  // and the LLM step already cleans dialect spelling — so the hint costs more than
-  // it helps.
+  if (input.expected !== 'en') {
+    // Bias Whisper toward German/Bavarian spelling — A/B'd: keeps "Bairisch"
+    // (drops to "bayerisch"/"Bärisch" without it). On silence Whisper can echo
+    // this hint back, but that echo is caught by isLikelyNonSpeech's CAPTION rule
+    // ("gesprochenes bairisch"/"vergleich zu hochdeutsch").
+    form.append('prompt', 'Gesprochenes Bairisch bzw. Hochdeutsch.');
+  }
 
   const res = await fetch(TRANSCRIBE_URL, {
     method: 'POST',

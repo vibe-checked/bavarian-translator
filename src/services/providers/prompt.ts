@@ -154,7 +154,7 @@ export function isLikelyNonSpeech(transcript: string, durationSec?: number): boo
   if (CAPTION.test(s) || RECIPE.test(s)) return true;
   const words = s.split(/\s+/).filter(Boolean);
   if (words.length <= 12 && CANNED.test(s)) return true;
-  if (durationSec && durationSec >= 0.2 && words.length >= 5 && words.length / durationSec > 6.5) {
+  if (durationSec && durationSec >= 0.2 && words.length >= 6 && words.length / durationSec > 8) {
     return true;
   }
   return false;
