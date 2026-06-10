@@ -188,6 +188,17 @@ export function SettingsSheet(props: Props) {
               the table from you.
             </Text>
 
+            <ToggleRow
+              label="German only (ignore English)"
+              value={settings.germanOnly}
+              onValueChange={(v) => update({ germanOnly: v })}
+            />
+            <Text style={styles.help}>
+              One-way “listen to Oma” mode: only German speech is translated — you’ll see what she
+              said up top and the English translation below. The English side is ignored (no bubble,
+              nothing spoken back), so your own talking doesn’t clutter the screen or use quota.
+            </Text>
+
             <Text style={styles.subhead}>Hands-free modes (always listening)</Text>
             <Text style={styles.help}>
               Switch modes with the control on the main screen:{'\n'}

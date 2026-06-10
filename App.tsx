@@ -55,8 +55,14 @@ export default function App() {
     loadVoices().then(setVoices).catch(() => {});
   }, []);
 
-  function addUtterance(res: { detected: Lang | 'other'; bavarian: boolean; de: string; en: string }, fallback: Lang) {
+  function addUtterance(
+    res: { detected: Lang | 'other'; bavarian: boolean; de: string; en: string },
+    fallback: Lang,
+  ): Utterance | null {
     const speaker: Lang = res.detected === 'en' ? 'en' : res.detected === 'de' ? 'de' : fallback;
+    // German-only mode: listen to the German speaker, ignore the English side
+    // entirely (no bubble, no spoken-back translation).
+    if (settings.germanOnly && speaker === 'en') return null;
     const u: Utterance = {
       id: newId(),
       speaker,
@@ -144,7 +150,7 @@ export default function App() {
           return;
         }
         const u = addUtterance(res, pane);
-        if (settings.autoSpeak) {
+        if (u && settings.autoSpeak) {
           if (u.speaker === 'de') speak(u.en, 'en', settings, { onError: showError });
           else speak(u.de, 'de', settings, { onError: showError });
         }
@@ -179,7 +185,7 @@ export default function App() {
         return;
       }
       const u = addUtterance(res, 'de');
-      if (settings.autoSpeak) {
+      if (u && settings.autoSpeak) {
         setAutoPhase('speaking');
         if (u.speaker === 'de') await speakAsync(u.en, 'en', settings);
         else await speakAsync(u.de, 'de', settings);
@@ -373,7 +379,7 @@ export default function App() {
           micIdle="🎤  Speak"
           micRecording="■  Done"
           micBusy="Translating…"
-          showMic={!listening}
+          showMic={!listening && !settings.germanOnly}
           mode={settings.conversationMode}
           onMic={() => handleMic('en')}
           onReplay={(u) => speak(u.en, 'en', settings, { onError: showError })}

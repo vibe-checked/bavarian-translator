@@ -68,6 +68,12 @@ export interface Settings {
    * active in the background, which uses more battery.
    */
   backgroundListening: boolean;
+  /**
+   * One-way "listen to Oma" mode: only translate German speech (show what she
+   * said on top, the English translation below) and ignore the English side
+   * entirely — no English→German bubble, no spoken-back translation.
+   */
+  germanOnly: boolean;
 
   /** Optional ElevenLabs key for a more natural / Bavarian German voice. */
   elevenLabsApiKey: string;
@@ -101,6 +107,7 @@ export const DEFAULT_SETTINGS: Settings = {
   conversationMode: 'tap',
   autoSpeechThresholdDb: -35,
   backgroundListening: false,
+  germanOnly: false,
 
   elevenLabsApiKey: process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY ?? '',
   elevenLabsVoiceId: process.env.EXPO_PUBLIC_ELEVENLABS_VOICE_ID ?? '',
