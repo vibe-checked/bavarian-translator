@@ -119,7 +119,7 @@ export function retryAfterSeconds(res: { headers?: { get?(name: string): string 
 // silence (ZDF/WDR/ARD/MBC/KBS/SBS/NHK news sign-offs), and the app's own Whisper
 // hint ("Gesprochenes Bairisch … Hochdeutsch") which Whisper echoes verbatim.
 const CAPTION =
-  /amara\.org|untertitel|zuschauen|aufmerksamkeit|thanks?\s+for\s+watching|(?:please|don'?t\s+forget\s+to)\s+subscribe|like\s+and\s+subscribe|\b(?:zdf|wdr|ard|mbc|kbs|sbs|nhk)\b|captions?\s+(?:are\s+)?auto[\s-]?generated|auto[\s-]?generated\s+(?:caption|subtitle)|gesprochenes\s+bairisch|vergleich\s+zu\s+hochdeutsch|bairisch\s+bzw|^[\s♪♫🎵.,!?\-–—]*$|^\s*[♪♫🎵]/i;
+  /amara\.org|untertitel|zuschauen|aufmerksamkeit|thanks?\s+for\s+watching|(?:please|don'?t\s+forget\s+to)\s+subscribe|like\s+and\s+subscribe|subscribe\s+to\s+(?:my|the|our)|see\s+you\s+(?:next\s+time|in\s+the\s+next|soon)|don'?t\s+forget\s+to\s+(?:like|comment)|(?:hit|smash)\s+(?:the\s+)?like|\b(?:zdf|wdr|ard|mbc|kbs|sbs|nhk)\b|captions?\s+(?:are\s+)?auto[\s-]?generated|auto[\s-]?generated\s+(?:caption|subtitle)|gesprochenes\s+bairisch|vergleich\s+zu\s+hochdeutsch|bairisch\s+bzw|^[\s♪♫🎵.,!?\-–—]*$|^\s*[♪♫🎵]/i;
 
 // A standalone recipe-measurement line ("1 teaspoon of vanilla extract",
 // "1 EL Butter", "1 Teelöffel Vanilleextrakt") — a classic Whisper relic from
@@ -133,7 +133,7 @@ const RECIPE =
 // one of these words survives. The language name is anchored to the whole
 // string so real lines like "Ich kann nur Bairisch" are NOT dropped.
 const CANNED =
-  /^\s*(?:bairisch|bavarian)[\s.!?]*$|^\s*(?:i\s+(?:do\s+not|don'?t)\s+understand|ich\s+verstehe\s+(?:das\s+)?nicht)[\s.!?]*$|(?:could|can)\s+you\s+(?:please\s+)?repeat|please\s+repeat\b|(?:did\s?n'?t|do\s+not|don'?t)\s+(?:understand|catch)\s+(?:that|you|it)\b|nicht\s+verstanden|bitte\s+wiederholen|wiederholen\s+sie\b|\breporting\s+(?:for|from)\b|back\s+to\s+you\b/i;
+  /^\s*you[\s.!?]*$|^\s*(?:bairisch|bavarian)[\s.!?]*$|^\s*(?:i\s+(?:do\s+not|don'?t)\s+understand|ich\s+verstehe\s+(?:das\s+)?nicht)[\s.!?]*$|(?:could|can)\s+you\s+(?:please\s+)?repeat|please\s+repeat\b|(?:did\s?n'?t|do\s+not|don'?t)\s+(?:understand|catch)\s+(?:that|you|it)\b|nicht\s+verstanden|bitte\s+wiederholen|wiederholen\s+sie\b|\breporting\s+(?:for|from)\b|back\s+to\s+you\b/i;
 
 /** Duration of a 16 kHz mono 16-bit PCM WAV from its base64 (≈4/3 of bytes). */
 export function wavDurationSec(base64: string): number {

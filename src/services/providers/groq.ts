@@ -25,7 +25,7 @@ async function transcribe(input: TranslateInput): Promise<string> {
   if (input.expected === 'de' || input.expected === 'en') {
     form.append('language', input.expected);
   }
-  form.append('response_format', 'json');
+  form.append('response_format', 'verbose_json'); // verbose → exposes the detected `language`
   form.append('temperature', '0'); // deterministic — a touch less prone to confabulating on noise
   if (input.expected !== 'en') {
     // Bias Whisper toward German/Bavarian spelling — A/B'd: keeps "Bairisch"
@@ -51,6 +51,11 @@ async function transcribe(input: TranslateInput): Promise<string> {
     throw httpError('Groq (transcribe)', res.status, detail, retryAfterSeconds(res));
   }
   const json = await res.json();
+  // The conversation is only German↔English. Whisper hallucinates in OTHER
+  // languages on noise/silence (e.g. "Gracias" → Spanish); if it detected a
+  // non-DE/EN language, treat the clip as non-speech so nothing is shown.
+  const lang = String(json?.language ?? '').toLowerCase();
+  if (lang && !/german|english|deutsch|englisch/.test(lang)) return '';
   return (json?.text ?? '').trim();
 }
 
