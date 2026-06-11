@@ -135,28 +135,18 @@ const RECIPE =
 const CANNED =
   /^\s*you[\s.!?]*$|^\s*(?:bairisch|bavarian)[\s.!?]*$|^\s*(?:i\s+(?:do\s+not|don'?t)\s+understand|ich\s+verstehe\s+(?:das\s+)?nicht)[\s.!?]*$|(?:could|can)\s+you\s+(?:please\s+)?repeat|please\s+repeat\b|(?:did\s?n'?t|do\s+not|don'?t)\s+(?:understand|catch)\s+(?:that|you|it)\b|nicht\s+verstanden|bitte\s+wiederholen|wiederholen\s+sie\b|\breporting\s+(?:for|from)\b|back\s+to\s+you\b/i;
 
-/** Duration of a 16 kHz mono 16-bit PCM WAV from its base64 (≈4/3 of bytes). */
-export function wavDurationSec(base64: string): number {
-  const bytes = Math.floor((base64?.length ?? 0) * 0.75);
-  return Math.max(0, (bytes - 44) / 32000);
-}
-
 /**
- * True when a transcript is empty or an obvious non-speech hallucination.
- * Pass `durationSec` (for RAW transcripts, e.g. Whisper/Voxtral) to also reject
- * a whole phrase squeezed out of a tiny noise clip — humans top out ~5–6 words/s.
- * Do NOT pass it for cleaned/translated text (e.g. Gemini), where word count no
- * longer tracks the spoken audio.
+ * True when a transcript is empty or matches a known non-speech hallucination
+ * pattern (captions, recipe lines, canned filler). Only drops WHOLE junk
+ * utterances — never trims real speech — so it can't make a translation
+ * incomplete.
  */
-export function isLikelyNonSpeech(transcript: string, durationSec?: number): boolean {
+export function isLikelyNonSpeech(transcript: string): boolean {
   const s = transcript.trim();
   if (!s) return true;
   if (CAPTION.test(s) || RECIPE.test(s)) return true;
   const words = s.split(/\s+/).filter(Boolean);
   if (words.length <= 12 && CANNED.test(s)) return true;
-  if (durationSec && durationSec >= 0.2 && words.length >= 6 && words.length / durationSec > 8) {
-    return true;
-  }
   return false;
 }
 

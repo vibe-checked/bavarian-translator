@@ -7,7 +7,6 @@ import {
   httpError,
   retryAfterSeconds,
   isLikelyNonSpeech,
-  wavDurationSec,
 } from './prompt';
 
 // Groq does speech in two steps: Whisper transcription, then an LLM translates.
@@ -25,8 +24,7 @@ async function transcribe(input: TranslateInput): Promise<string> {
   if (input.expected === 'de' || input.expected === 'en') {
     form.append('language', input.expected);
   }
-  form.append('response_format', 'verbose_json'); // verbose → exposes the detected `language`
-  form.append('temperature', '0'); // deterministic — a touch less prone to confabulating on noise
+  form.append('response_format', 'json');
   if (input.expected !== 'en') {
     // Bias Whisper toward German/Bavarian spelling — A/B'd: keeps "Bairisch"
     // (drops to "bayerisch"/"Bärisch" without it). On silence Whisper can echo
@@ -51,18 +49,12 @@ async function transcribe(input: TranslateInput): Promise<string> {
     throw httpError('Groq (transcribe)', res.status, detail, retryAfterSeconds(res));
   }
   const json = await res.json();
-  // The conversation is only German↔English. Whisper hallucinates in OTHER
-  // languages on noise/silence (e.g. "Gracias" → Spanish); if it detected a
-  // non-DE/EN language, treat the clip as non-speech so nothing is shown.
-  const lang = String(json?.language ?? '').toLowerCase();
-  if (lang && !/german|english|deutsch|englisch/.test(lang)) return '';
   return (json?.text ?? '').trim();
 }
 
 async function translate(input: TranslateInput): Promise<TranslateResult> {
   const transcript = await transcribe(input);
-  if (isLikelyNonSpeech(transcript, wavDurationSec(input.base64)))
-    return { detected: 'other', bavarian: false, de: '', en: '' };
+  if (isLikelyNonSpeech(transcript)) return { detected: 'other', bavarian: false, de: '', en: '' };
 
   const res = await fetch(CHAT_URL, {
     method: 'POST',
