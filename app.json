@@ -15,10 +15,12 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.marcushsu.bavariantranslator",
+      "buildNumber": "1",
       "infoPlist": {
         "UIBackgroundModes": [
           "audio"
-        ]
+        ],
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
