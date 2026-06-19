@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.marcushsu.bavariantranslator",
+      "bundleIdentifier": "com.markutilitylabs.bavariantranslator",
       "buildNumber": "1",
       "infoPlist": {
         "UIBackgroundModes": [
@@ -24,7 +24,7 @@
       }
     },
     "android": {
-      "package": "com.marcushsu.bavariantranslator",
+      "package": "com.markutilitylabs.bavariantranslator",
       "permissions": [
         "android.permission.RECORD_AUDIO"
       ],
