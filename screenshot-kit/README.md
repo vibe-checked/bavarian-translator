@@ -84,3 +84,29 @@ Tips:
   (Arial has no ✓ glyph).
 - Sizes you can nudge in `config.py`: `HERO_SW`, `HERO_TILT`, `HERO_PX`,
   `PANEL_SW`, `TITLE_SIZE`.
+
+## For a fresh Claude session (autonomous runbook)
+If you're an AI agent told *"read screenshot-kit/README.md and make the App Store
+screenshots"*, do exactly this — no other context needed:
+
+1. Read `config.example.py` to see the exact shape to produce.
+2. **Learn the app:** read `app.json` / `app.config.*` for the bundle id + name;
+   skim the source (screens/routes, seed data, app README) to list the key
+   screens and 4–6 value props. These decide the headlines, bullets, and which
+   screens to capture.
+3. **Capture raws** into `raw/` from a booted Simulator:
+   - `xcrun simctl io booted screenshot raw/<name>.png`
+   - For a screen needing state, inject it via the app's data-container
+     AsyncStorage and relaunch (see *Capturing raws*). Don't depend on UI taps.
+   - If a system dialog sticks, reboot the sim.
+4. **Sample the icon** colors (a few pixels) → set `BG_STOPS` (gradient) and
+   `ACCENT` so the frames match the icon's mood.
+5. `cp config.example.py config.py` and fill EVERY field for this app:
+   APP_NAME, TAGLINE, ICON, colors, BULLETS (4), PANELS (one row per screen).
+6. `pip3 install pillow` if needed, then `python3 compose.py`.
+7. Open a few generated `../app-store-screenshots/*.png` and sanity-check (text
+   not clipped, phone framed, colors on-brand); re-edit config.py + re-run.
+8. Commit + push per the user's global conventions (author Marcus Hsu, Conventional
+   Commits, push to main). Verify the bundle id is `com.markutilitylabs.*`.
+
+Only `config.py` and `raw/` change between apps.
