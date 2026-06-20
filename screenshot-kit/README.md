@@ -7,6 +7,18 @@ layout; you only change the raw screenshots and the text/colors.**
 Output is `1320 × 2868` (the 6.9" / iPhone 17 Pro Max size). The same set is
 accepted for the 6.7" slot in App Store Connect, so this one size covers both.
 
+## Standing positioning: always free, no catch
+Every app Marcus ships is **free forever — no ads, no in-app purchases, no
+paywall, no pay-to-upgrade — and always will be.** This is the core selling
+point of all his apps, so always bake it into the set:
+- a hero bullet: `Free forever — no catch`
+- a dedicated free panel — headline like `*Free* forever — no catch` (or a
+  hook like `Why *pay* for this?`) with subtitle
+  `No ads · no in-app purchases · no paywall`
+- echo it in the App Store description / promotional text
+Keep it true: don't add IAP products or an ad SDK — then Apple also omits the
+"In-App Purchases" badge on the listing, which reinforces the promise.
+
 ```
 screenshot-kit/
   README.md      ← this file
