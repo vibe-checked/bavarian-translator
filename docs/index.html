@@ -1,77 +1,634 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>BavarianTranslator — Real-time German ↔ English, built for Bavarian dialect</title>
-<meta name="description" content="A real-time, two-way conversation translator between a German (Bavarian dialect) speaker and an English speaker. Slow, clear German for elderly listeners.">
-<link rel="stylesheet" href="styles.css">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bavarian Translator — Support &amp; Privacy</title>
+  <meta name="description" content="Support and privacy information for Bavarian Translator — the real-time, two-way German ↔ English conversation translator built for Bavarian dialect." />
+  <style>
+    :root {
+      --bg:        #f5f7fb;
+      --surface:   #ffffff;
+      --ink:       #16181d;
+      --muted:     #5b6472;
+      --subtle:    #97a0b0;
+      --rule:      #e7e9ef;
+      --accent:    #c8102e;   /* German red  */
+      --deep:      #a50d24;
+      --soft:      #fde8ea;
+      --blue:      #1d5fb8;   /* English blue */
+      --blue-deep: #154a91;
+      --blue-soft: #e8f0fb;
+      --radius:    14px;
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.65;
+      font-size: 16px;
+    }
+
+    /* ─── NAV ─── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      background: var(--surface);
+      border-bottom: 1px solid var(--rule);
+      padding: 0 24px;
+      display: flex; align-items: center; justify-content: space-between;
+      height: 60px;
+    }
+    .nav-brand {
+      font-size: 21px; font-weight: 800; letter-spacing: -0.3px;
+      text-decoration: none; color: var(--ink);
+      display: inline-flex; align-items: center; gap: 9px;
+      white-space: nowrap;
+    }
+    .nav-brand span { color: var(--accent); }
+    .nav-brand .flag { font-size: 16px; }
+    .nav-links { display: flex; gap: 30px; list-style: none; margin: 0; padding: 0; align-items: center; }
+    .nav-links a {
+      color: var(--muted); text-decoration: none;
+      font-size: 14px; font-weight: 600; transition: color .15s;
+    }
+    .nav-links a:hover { color: var(--accent); }
+
+    /* ─── HERO ─── */
+    .hero {
+      background: linear-gradient(135deg, #0c1f3a 0%, #1d5fb8 52%, #c8102e 112%);
+      color: #fff;
+      padding: 82px 24px 64px;
+      text-align: center;
+    }
+    .hero-eyebrow {
+      font-size: 11px; letter-spacing: 2.5px; font-weight: 700;
+      color: rgba(255,255,255,.7); text-transform: uppercase; margin-bottom: 16px;
+    }
+    .hero h1 {
+      font-size: clamp(34px, 6.6vw, 60px);
+      font-weight: 800; letter-spacing: -1px; line-height: 1.1;
+      margin-bottom: 18px;
+    }
+    .hero h1 em { color: #bcd7ff; font-style: italic; }
+    .hero p {
+      font-size: 17px; color: rgba(255,255,255,.82);
+      max-width: 560px; margin: 0 auto 36px;
+    }
+    .hero-pills { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+    .pill {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 9px 18px; border-radius: 999px;
+      font-size: 13px; font-weight: 700;
+      text-decoration: none; transition: opacity .15s;
+    }
+    .pill:hover { opacity: .88; }
+    .pill-primary { background: var(--accent); color: #fff; }
+    .pill-outline { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,.45); }
+
+    /* ─── SCREENSHOTS ─── */
+    .screenshots-section {
+      padding: 72px 24px;
+      background: var(--surface);
+      border-bottom: 1px solid var(--rule);
+    }
+    .section-label {
+      font-size: 11px; letter-spacing: 2px; font-weight: 700;
+      color: var(--accent); text-transform: uppercase; margin-bottom: 8px;
+      text-align: center;
+    }
+    .section-title {
+      font-size: clamp(26px, 4vw, 38px); font-weight: 800; letter-spacing: -0.5px;
+      color: var(--ink); text-align: center; margin-bottom: 10px;
+    }
+    .section-sub {
+      font-size: 16px; color: var(--muted); text-align: center;
+      max-width: 560px; margin: 0 auto 48px;
+    }
+
+    .screenshots-scroll {
+      display: flex;
+      gap: 22px;
+      overflow-x: auto;
+      padding: 12px 4px 20px;
+      scroll-snap-type: x mandatory;
+      -webkit-overflow-scrolling: touch;
+      justify-content: center;
+      flex-wrap: wrap;
+    }
+    .screenshot-frame {
+      flex: 0 0 auto;
+      width: 224px;
+      scroll-snap-align: start;
+      text-align: center;
+    }
+    .screenshot-device {
+      background: #1a1a1a;
+      border-radius: 32px;
+      padding: 11px;
+      box-shadow: 0 24px 60px rgba(12,31,58,.22), 0 4px 12px rgba(0,0,0,.12);
+      display: inline-block;
+      width: 100%;
+    }
+    .screenshot-device img {
+      width: 100%;
+      border-radius: 22px;
+      display: block;
+    }
+    .screenshot-caption {
+      margin-top: 14px;
+      font-size: 12px; font-weight: 700; color: var(--muted);
+      letter-spacing: 0.5px; text-transform: uppercase;
+    }
+
+    /* ─── FEATURES GRID ─── */
+    .features-section {
+      padding: 72px 24px;
+      background: var(--bg);
+      border-bottom: 1px solid var(--rule);
+    }
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 20px;
+      max-width: 960px;
+      margin: 0 auto;
+    }
+    .feature-card {
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .feature-icon { font-size: 28px; margin-bottom: 12px; }
+    .feature-title { font-size: 15px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+    .feature-body { font-size: 13px; color: var(--muted); line-height: 1.6; }
+    .feature-body em { color: var(--ink); font-style: italic; }
+
+    /* ─── CONTENT SECTIONS ─── */
+    .content-section {
+      max-width: 760px;
+      margin: 0 auto;
+      padding: 72px 24px;
+      border-bottom: 1px solid var(--rule);
+    }
+    .content-section:last-of-type { border-bottom: none; }
+
+    .section-badge {
+      display: inline-block;
+      font-size: 10px; letter-spacing: 2px; font-weight: 700;
+      text-transform: uppercase;
+      background: var(--soft); color: var(--deep);
+      padding: 5px 12px; border-radius: 999px;
+      margin-bottom: 16px;
+    }
+    .section-badge.blue { background: var(--blue-soft); color: var(--blue-deep); }
+
+    h2 {
+      font-size: clamp(24px, 3vw, 32px); font-weight: 800; letter-spacing: -0.4px;
+      color: var(--ink); margin-bottom: 10px;
+    }
+    .lead {
+      font-size: 16px; color: var(--muted); margin-bottom: 36px; line-height: 1.7;
+    }
+
+    h3 {
+      font-size: 16px; font-weight: 700; color: var(--ink);
+      margin: 28px 0 8px;
+    }
+    h3:first-of-type { margin-top: 0; }
+
+    p { color: var(--muted); font-size: 15px; margin-bottom: 14px; line-height: 1.7; }
+    p:last-child { margin-bottom: 0; }
+
+    ul, ol {
+      padding-left: 20px;
+      color: var(--muted); font-size: 15px; margin-bottom: 14px;
+    }
+    li { margin-bottom: 6px; line-height: 1.65; }
+    strong { color: var(--ink); font-weight: 700; }
+    a { color: var(--blue); }
+    .content-section a:hover { color: var(--blue-deep); }
+
+    /* Setup steps */
+    .setup-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 16px;
+      margin: 8px 0 8px;
+    }
+    .step-card {
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 20px;
+    }
+    .step-num {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 999px;
+      background: var(--accent); color: #fff;
+      font-size: 14px; font-weight: 800; margin-bottom: 12px;
+    }
+    .step-card h4 { font-size: 14px; font-weight: 700; color: var(--ink); margin-bottom: 5px; }
+    .step-card p { font-size: 13px; color: var(--muted); margin: 0; line-height: 1.55; }
+    .step-card a { font-weight: 600; }
+
+    /* Modes table / provider table */
+    .tbl {
+      width: 100%; border-collapse: collapse;
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin: 8px 0 14px;
+      font-size: 14px;
+    }
+    .tbl th, .tbl td {
+      text-align: left; padding: 12px 16px;
+      border-bottom: 1px solid var(--rule);
+      vertical-align: top;
+    }
+    .tbl th {
+      background: #f0f3f8; color: var(--ink);
+      font-size: 12px; letter-spacing: .4px; text-transform: uppercase; font-weight: 700;
+    }
+    .tbl tr:last-child td { border-bottom: none; }
+    .tbl td { color: var(--muted); }
+    .tbl td strong { color: var(--ink); }
+
+    /* Callout */
+    .callout {
+      background: var(--blue-soft);
+      border: 1px solid #cfe0f5;
+      border-left: 4px solid var(--blue);
+      border-radius: 10px;
+      padding: 14px 18px;
+      font-size: 14px; color: #234; line-height: 1.6;
+      margin: 18px 0;
+    }
+    .callout strong { color: var(--blue-deep); }
+
+    /* FAQ */
+    .faq-list { display: flex; flex-direction: column; gap: 12px; }
+    .faq-item {
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      overflow: hidden;
+    }
+    details summary {
+      padding: 16px 20px;
+      font-size: 15px; font-weight: 700; color: var(--ink);
+      cursor: pointer;
+      list-style: none;
+      display: flex; justify-content: space-between; align-items: center;
+      gap: 16px;
+    }
+    details summary::-webkit-details-marker { display: none; }
+    details summary::after {
+      content: "+"; font-size: 20px; color: var(--accent);
+      transition: transform .2s; line-height: 1; flex-shrink: 0;
+    }
+    details[open] summary::after { content: "−"; }
+    details .faq-body {
+      padding: 0 20px 16px;
+      font-size: 14px; color: var(--muted); line-height: 1.65;
+    }
+    details[open] summary { color: var(--accent); }
+
+    /* Contact card */
+    .contact-card {
+      background: var(--surface);
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 28px;
+      display: flex; gap: 20px; align-items: flex-start;
+      margin-top: 32px;
+    }
+    .contact-icon { font-size: 32px; flex-shrink: 0; }
+    .contact-title { font-size: 16px; font-weight: 700; color: var(--ink); margin-bottom: 4px; }
+    .contact-body { font-size: 14px; color: var(--muted); margin-bottom: 14px; line-height: 1.6; }
+    .contact-link {
+      display: inline-flex; align-items: center; gap: 6px;
+      background: var(--accent); color: #fff;
+      padding: 10px 20px; border-radius: 999px;
+      font-size: 13px; font-weight: 700; text-decoration: none;
+      transition: opacity .15s;
+    }
+    .contact-link:hover { opacity: .88; color: #fff; }
+
+    /* Privacy highlight */
+    .privacy-highlight {
+      background: var(--blue-soft);
+      border: 1px solid #c2d8f2;
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-bottom: 28px;
+      display: flex; gap: 14px; align-items: flex-start;
+    }
+    .privacy-highlight .phi { font-size: 24px; flex-shrink: 0; }
+    .privacy-highlight p {
+      font-size: 14px; color: #1f3a5c; margin: 0; line-height: 1.6;
+    }
+    .privacy-highlight strong { color: var(--blue-deep); }
+
+    /* ─── FOOTER ─── */
+    footer {
+      background: var(--ink);
+      color: rgba(255,255,255,.5);
+      padding: 36px 24px;
+      text-align: center;
+    }
+    .footer-brand {
+      font-size: 20px; font-weight: 800; color: #fff; margin-bottom: 6px;
+    }
+    .footer-brand span { color: #ff8a9b; }
+    footer p { font-size: 13px; color: rgba(255,255,255,.45); margin-bottom: 4px; }
+    .footer-links { display: flex; justify-content: center; gap: 24px; margin-top: 16px; flex-wrap: wrap; }
+    .footer-links a { color: rgba(255,255,255,.55); font-size: 13px; text-decoration: none; }
+    .footer-links a:hover { color: rgba(255,255,255,.92); }
+
+    @media (max-width: 600px) {
+      nav { padding: 0 16px; }
+      .nav-brand { font-size: 17px; gap: 6px; }
+      .nav-brand .flag { display: none; }
+      .nav-links { gap: 16px; }
+      .nav-links a { font-size: 13px; }
+      .contact-card { flex-direction: column; gap: 12px; }
+      .screenshots-scroll { flex-wrap: nowrap; justify-content: flex-start; }
+    }
+  </style>
 </head>
 <body>
-<header class="site-header">
-  <div class="wrap">
-    <a class="brand" href="index.html"><span class="flag">🇩🇪⇄🇬🇧</span> BavarianTranslator</a>
-    <nav class="nav">
-      <a href="support.html">Support</a>
-      <a href="privacy.html">Privacy</a>
-      <a href="https://github.com/vibe-checked/bavarian-translator">GitHub</a>
-    </nav>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-brand"><span class="flag">🇩🇪⇄🇬🇧</span> Bavarian<span> Translator</span></a>
+  <ul class="nav-links">
+    <li><a href="#support">Support</a></li>
+    <li><a href="#privacy">Privacy</a></li>
+  </ul>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <p class="hero-eyebrow">Real-Time German ↔ English · Bavarian Dialect</p>
+  <h1>Talk across the table in<br><em>two languages at once</em></h1>
+  <p>A real-time, two-way conversation translator between a German speaker — even in broad <strong style="color:#fff">Bavarian dialect</strong> — and an English speaker. Built so Oma can follow along, in slow, clear German.</p>
+  <div class="hero-pills">
+    <a href="#support" class="pill pill-primary">🙋 Get support</a>
+    <a href="#privacy" class="pill pill-outline">🔒 Privacy policy</a>
   </div>
-</header>
+</section>
 
-<div class="wrap">
-  <section class="hero">
-    <h1>Talk across the table in <span class="grad">two languages at once</span></h1>
-    <p class="lead">A real-time, two-way conversation translator between a German speaker — even in <strong>Bavarian dialect</strong> — and an English speaker. Built so Oma can follow along, in slow, clear German.</p>
-    <div class="btns">
-      <a class="btn btn-primary" href="support.html">Get Support</a>
-      <a class="btn btn-ghost" href="privacy.html">Privacy Policy</a>
+<!-- SCREENSHOTS -->
+<section class="screenshots-section">
+  <p class="section-label">Inside the app</p>
+  <h2 class="section-title">One screen, both languages</h2>
+  <p class="section-sub">The display splits in half — Deutsch · Oma on top, English below. One person speaks, and the conversation appears in both languages at once.</p>
+
+  <div class="screenshots-scroll">
+    <div class="screenshot-frame">
+      <div class="screenshot-device">
+        <img src="screenshots/home.png" alt="Split-screen home with German on top and English below" loading="lazy" />
+      </div>
+      <p class="screenshot-caption">Tap to Talk</p>
     </div>
-  </section>
-
-  <section class="shots" aria-label="App screenshots">
-    <figure class="phone"><img src="screenshots/home.png" alt="BavarianTranslator split-screen home, German on top and English below"></figure>
-    <figure class="phone"><img src="screenshots/translate.png" alt="Live translation streaming into both German and English panes"></figure>
-  </section>
-</div>
-
-<main class="wrap">
-  <section>
-    <h2>Why it’s different</h2>
-    <p class="section-sub">Most translators flatten dialect into mush. This one is tuned for how people actually speak in Bavaria.</p>
-    <div class="grid">
-      <div class="card"><div class="ic">🗣️</div><h3>Understands Bavarian</h3><p>Tuned to interpret Boarisch — <em>Servus, fei, gell, a bissl, dahoam, Brotzeit, Pfiat di</em> — and tags each line when dialect is detected.</p></div>
-      <div class="card"><div class="ic">👵</div><h3>Slow German for Oma</h3><p>Spoken translations can be slowed right down (¼, ⅓, or ⅗ speed) so an elderly listener can follow every word.</p></div>
-      <div class="card"><div class="ic">⚡</div><h3>Three ways to talk</h3><p><strong>Tap</strong> a mic per turn, go <strong>hands-free</strong> (it detects who’s speaking), or stream translations <strong>live</strong> as you speak.</p></div>
-      <div class="card"><div class="ic">🔁</div><h3>Choose your engine</h3><p>Google Gemini, Groq, or Mistral — each with a quality score. If one hits its daily limit, it switches automatically and keeps going.</p></div>
-      <div class="card"><div class="ic">🔒</div><h3>Private by design</h3><p>No account, no ads, no tracking. Your API keys and settings never leave your device.</p></div>
-      <div class="card"><div class="ic">🔊</div><h3>Hear it aloud</h3><p>Translations are spoken automatically, and you can tap any line to replay it — handy across a noisy table.</p></div>
+    <div class="screenshot-frame">
+      <div class="screenshot-device">
+        <img src="screenshots/translate.png" alt="Live translation streaming into the German and English panes" loading="lazy" />
+      </div>
+      <p class="screenshot-caption">Live Translation</p>
     </div>
-  </section>
-
-  <section>
-    <h2>How a conversation flows</h2>
-    <p class="section-sub">The screen is split: <span style="color:var(--de);font-weight:700">Deutsch · Oma</span> on top, <span style="color:var(--en);font-weight:700">English</span> below. Everything appears in both languages at once.</p>
-    <div class="shots">
-      <figure class="phone"><img src="screenshots/live.png" alt="A back-and-forth conversation shown in German and English bubbles"></figure>
+    <div class="screenshot-frame">
+      <div class="screenshot-device">
+        <img src="screenshots/live.png" alt="A back-and-forth conversation shown in German and English bubbles" loading="lazy" />
+      </div>
+      <p class="screenshot-caption">Conversation Flow</p>
     </div>
-  </section>
+  </div>
+</section>
 
-  <section>
-    <h2>Questions?</h2>
-    <p class="section-sub">The <a href="support.html">Support page</a> covers setup, the three modes, and troubleshooting. Read how your data is handled in the <a href="privacy.html">Privacy Policy</a>.</p>
-  </section>
-</main>
+<!-- FEATURES -->
+<section class="features-section">
+  <p class="section-label">Key features</p>
+  <h2 class="section-title">Tuned for how Bavaria actually speaks</h2>
+  <p class="section-sub">Most translators flatten dialect into mush. This one is built for real conversation across the kitchen table.</p>
+  <div class="features-grid">
+    <div class="feature-card">
+      <div class="feature-icon">🗣️</div>
+      <div class="feature-title">Understands Bavarian</div>
+      <div class="feature-body">Tuned to interpret Boarisch — <em>Servus, fei, gell, a bissl, dahoam, Brotzeit, Pfiat di</em> — and tags each line when dialect is detected.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">👵</div>
+      <div class="feature-title">Slow German for Oma</div>
+      <div class="feature-body">Spoken translations can be slowed right down so an elderly listener can follow every word at their own pace.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">⚡</div>
+      <div class="feature-title">Three ways to talk</div>
+      <div class="feature-body"><strong>Tap</strong> a mic per turn, go <strong>hands-free</strong> (it detects who's speaking), or stream translations <strong>live</strong> as you speak.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔁</div>
+      <div class="feature-title">Choose your engine</div>
+      <div class="feature-body">Google Gemini, Groq, or Mistral — each with a quality score. If one hits its daily limit, it switches automatically and keeps going.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔒</div>
+      <div class="feature-title">Private by design</div>
+      <div class="feature-body">No account, no ads, no tracking. Your API keys and settings never leave your device.</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-icon">🔊</div>
+      <div class="feature-title">Hear it aloud</div>
+      <div class="feature-body">Translations are spoken automatically, and you can tap any line to replay it — handy across a noisy table.</div>
+    </div>
+  </div>
+</section>
 
-<footer class="site-footer">
-  <div class="wrap">
-    <div>© 2026 BavarianTranslator</div>
+<!-- SUPPORT -->
+<section class="content-section" id="support">
+  <span class="section-badge">Support</span>
+  <h2>How can we help?</h2>
+  <p class="lead">Set-up takes about a minute. Below you'll find the quick-start steps, the three conversation modes, and answers to common questions. If you're still stuck, reach out directly — we typically reply within a couple of business days.</p>
+
+  <h3>Quick setup</h3>
+  <p>Translation is powered by a cloud AI that you choose, using <strong>your own free API key</strong> — so your usage stays private and free.</p>
+  <div class="setup-steps">
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <h4>Get a free key</h4>
+      <p>No credit card needed. Grab one from <a href="https://aistudio.google.com/apikey">Google Gemini</a>, <a href="https://console.groq.com/keys">Groq</a>, or <a href="https://console.mistral.ai/api-keys">Mistral</a>.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <h4>Paste it in</h4>
+      <p>Open <strong>⚙︎ Settings → Translation engine</strong>, pick an engine, and paste your key.</p>
+    </div>
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <h4>Start talking</h4>
+      <p>Go back, choose a mode, and have your conversation in two languages at once.</p>
+    </div>
+  </div>
+  <div class="callout">💡 You can add keys for more than one engine. If your chosen engine hits its daily limit, the app automatically switches to the next best one so your conversation never stops.</div>
+
+  <h3>The three modes</h3>
+  <table class="tbl">
+    <tr><th>Mode</th><th>How it works</th><th>Best for</th></tr>
+    <tr><td>👆 <strong>Tap</strong></td><td>Tap a mic, speak your turn, tap again. Most reliable.</td><td>Clear, controlled back-and-forth.</td></tr>
+    <tr><td>🔁 <strong>Auto</strong></td><td>Hands-free. It listens, detects who spoke, then translates and reads it aloud.</td><td>Natural conversation with Oma.</td></tr>
+    <tr><td>🔴 <strong>Live</strong></td><td>Streams the translated text as you speak, without waiting for you to finish.</td><td>Following a longer story.</td></tr>
+  </table>
+
+  <h3>Frequently asked questions</h3>
+  <div class="faq-list">
+
+    <div class="faq-item">
+      <details>
+        <summary>Is the app free? Do I have to pay?</summary>
+        <div class="faq-body">The app itself is free. Translation uses a cloud AI through a <strong>free API key</strong> you create — no credit card required. The free tiers have generous daily limits that are plenty for everyday conversations.</div>
+      </details>
+    </div>
+
+    <div class="faq-item">
+      <details>
+        <summary>Why do I need to add my own API key?</summary>
+        <div class="faq-body">It keeps the app free and your conversations private: requests go directly from your phone to the AI provider using <em>your</em> key. Nothing is routed through us.</div>
+      </details>
+    </div>
+
+    <div class="faq-item">
+      <details>
+        <summary>Which engine is best for Bavarian dialect?</summary>
+        <div class="faq-body">In our testing, <strong>Google Gemini</strong> handled dialect best, while <strong>Groq</strong> proved very robust on real Bavarian and has the largest free allowance, and <strong>Mistral</strong> is strong on clear German. Each engine shows a quality score in Settings so you can compare, and the app auto-switches if one is unavailable.</div>
+      </details>
+    </div>
+
+    <div class="faq-item">
+      <details>
+        <summary>Is my conversation private?</summary>
+        <div class="faq-body">Your audio is sent only to the translation provider you choose, using your own key, purely to produce the translation. We don't collect, store, or see your audio or translations. Full details are in the <a href="#privacy">Privacy Policy</a> below.</div>
+      </details>
+    </div>
+
+    <div class="faq-item">
+      <details>
+        <summary>It said "didn't catch that." What do I do?</summary>
+        <div class="faq-body">Speak a little closer and clearly. In Auto/Live, try setting the <em>Sensitivity</em> to "Sensitive" in Settings. Background noise and long silences can also trip it up.</div>
+      </details>
+    </div>
+
+    <div class="faq-item">
+      <details>
+        <summary>It switched engines on its own — is that normal?</summary>
+        <div class="faq-body">Yes. When an engine reaches its daily or per-minute limit, the app briefly shows "⚡ switched to …" and continues on the next best engine so your conversation isn't interrupted. The limited engine re-enables itself automatically once its limit resets.</div>
+      </details>
+    </div>
+
+    <div class="faq-item">
+      <details>
+        <summary>Does it work offline?</summary>
+        <div class="faq-body">Translation needs an internet connection (it's a cloud AI call). The spoken German voice itself works offline.</div>
+      </details>
+    </div>
+
+    <div class="faq-item">
+      <details>
+        <summary>Translation isn't appearing at all.</summary>
+        <div class="faq-body">Check your internet connection and confirm you added an API key in <strong>Settings → Translation engine</strong>. If you see "API key rejected," re-copy the key (no extra spaces) and paste it again. If every engine reports a rate limit, wait a little (limits reset within the hour, some overnight) or add a key for another engine so it can switch.</div>
+      </details>
+    </div>
+
+  </div>
+
+  <div class="contact-card">
+    <div class="contact-icon">✉️</div>
     <div>
-      <a href="support.html">Support</a>
-      <a href="privacy.html">Privacy</a>
-      <a href="mailto:monkeytree2019@gmail.com">Contact</a>
+      <div class="contact-title">Still need help?</div>
+      <p class="contact-body">Stuck on something, or have a suggestion? We'd love to hear from you. Please include your device model and iOS version so we can assist you faster — we aim to reply within a couple of business days.</p>
+      <a href="mailto:monkeytree2019@gmail.com" class="contact-link">Email support →</a>
     </div>
+  </div>
+</section>
+
+<!-- PRIVACY -->
+<section class="content-section" id="privacy">
+  <span class="section-badge blue">Privacy Policy</span>
+  <h2>Your privacy, simply explained</h2>
+  <p class="lead">Effective June 7, 2026 · Last updated June 7, 2026. This policy applies to the Bavarian Translator iOS application published by <strong>Mark Utility Labs</strong>.</p>
+
+  <div class="privacy-highlight">
+    <div class="phi">🔒</div>
+    <p><strong>Short version:</strong> Bavarian Translator has no account, no ads, and no tracking. We run no servers and never receive your data. Your audio is sent <em>only</em> to the translation provider <em>you</em> choose (Google, Groq, or Mistral), using <em>your own</em> API key, for the sole purpose of translating it. Your keys and settings stay on your device.</p>
+  </div>
+
+  <h3>1. Who we are</h3>
+  <p>Bavarian Translator ("the app", "we") is a real-time conversation translator for iOS, published by Mark Utility Labs. This policy explains what data the app handles and how. By using the app you agree to this policy.</p>
+
+  <h3>2. Information we collect</h3>
+  <p><strong>We, the developer, do not collect, store, or have access to any of your personal information.</strong> The app has no user accounts, no login, no analytics or advertising SDKs, and no developer-operated backend server. We cannot see your conversations, your audio, or your translations.</p>
+
+  <h3>3. Microphone &amp; audio</h3>
+  <p>The app uses your device microphone <strong>only while you are actively using it to translate</strong> — when you tap to speak (Tap mode) or while a hands-free mode (Auto/Live) is switched on. The captured audio is sent directly from your device to the cloud translation provider you selected, using your own API key, for the single purpose of transcribing and translating it. The app does not record your audio to a file, does not keep it after the translation is returned, and never sends it to us.</p>
+
+  <h3>4. Third-party translation providers</h3>
+  <p>To translate, the app sends your audio to whichever provider you enable in Settings. Your use of that provider is governed by <em>their</em> terms and privacy policy, not ours:</p>
+  <table class="tbl">
+    <tr><th>Provider</th><th>What is sent</th><th>Their privacy policy</th></tr>
+    <tr><td>Google Gemini</td><td>Your audio clip</td><td><a href="https://ai.google.dev/gemini-api/terms">ai.google.dev/gemini-api/terms</a></td></tr>
+    <tr><td>Groq</td><td>Your audio clip</td><td><a href="https://groq.com/privacy-policy/">groq.com/privacy-policy</a></td></tr>
+    <tr><td>Mistral</td><td>Your audio clip</td><td><a href="https://mistral.ai/terms/">mistral.ai/terms</a></td></tr>
+    <tr><td>ElevenLabs <em>(optional)</em></td><td>German text, only if you enable it</td><td><a href="https://elevenlabs.io/privacy">elevenlabs.io/privacy</a></td></tr>
+  </table>
+  <p>You choose the provider, and you supply your own API key, so the request is made under your own account with that provider. We recommend reviewing the privacy policy of whichever provider you use. The optional ElevenLabs voice feature is off by default; if you turn it on, only the German <em>text</em> to be spoken is sent to ElevenLabs.</p>
+
+  <h3>5. Data stored on your device</h3>
+  <p>The following is stored locally on your device only, and is never transmitted to us:</p>
+  <ul>
+    <li><strong>API keys</strong> you enter, and your <strong>app settings</strong> (chosen engine, voice, speed, mode), saved on the device so you don't have to re-enter them.</li>
+    <li><strong>Conversation text</strong> shown on screen is held only in the app's memory during a session and is cleared when you tap the trash button or close the app. It is not written to a file.</li>
+  </ul>
+  <p>You can remove all of this at any time by clearing the conversation in-app and/or deleting the app from your device.</p>
+
+  <h3>6. How your information is used</h3>
+  <p>Audio you speak is used solely to produce a translation, in real time, via the provider you selected. We do not use your data for advertising, profiling, model training, or any secondary purpose, and we do not sell or share it — because we never receive it.</p>
+
+  <h3>7. Children's privacy</h3>
+  <p>The app is not directed to children under 13 and does not knowingly collect personal information from them. Because the app collects no personal information at all, no such data is gathered from any user.</p>
+
+  <h3>8. International users</h3>
+  <p>The translation provider you choose may process your audio on servers located in other countries. Please review that provider's privacy policy (linked above) for details on international data handling.</p>
+
+  <h3>9. Changes to this policy</h3>
+  <p>If this policy changes, we will update this page and revise the "Last updated" date above. Material changes will be reflected here before they take effect.</p>
+
+  <h3>10. Contact us</h3>
+  <p>Questions about this policy or your privacy? Please contact us at:</p>
+  <p>
+    <strong>Mark Utility Labs</strong><br>
+    Email: <a href="mailto:monkeytree2019@gmail.com">monkeytree2019@gmail.com</a>
+  </p>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-brand">Bavarian<span> Translator</span></div>
+  <p>Talk across the table in two languages at once.</p>
+  <p style="margin-top:4px;">© 2026 Mark Utility Labs. All rights reserved.</p>
+  <div class="footer-links">
+    <a href="#support">Support</a>
+    <a href="#privacy">Privacy Policy</a>
+    <a href="mailto:monkeytree2019@gmail.com">Contact</a>
+    <a href="https://github.com/vibe-checked/bavarian-translator">GitHub</a>
   </div>
 </footer>
+
 </body>
 </html>

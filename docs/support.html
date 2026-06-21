@@ -1,104 +1,14 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Support — BavarianTranslator</title>
-<meta name="description" content="Support, setup guide, and FAQ for BavarianTranslator — the real-time German↔English conversation translator built for Bavarian dialect.">
-<link rel="stylesheet" href="styles.css">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Support — Bavarian Translator</title>
+  <link rel="canonical" href="index.html#support" />
+  <meta http-equiv="refresh" content="0; url=index.html#support" />
+  <script>window.location.replace("index.html#support");</script>
 </head>
 <body>
-<header class="site-header">
-  <div class="wrap">
-    <a class="brand" href="index.html"><span class="flag">🇩🇪⇄🇬🇧</span> BavarianTranslator</a>
-    <nav class="nav">
-      <a href="index.html">Home</a>
-      <a href="privacy.html">Privacy</a>
-      <a href="https://github.com/vibe-checked/bavarian-translator">GitHub</a>
-    </nav>
-  </div>
-</header>
-
-<main class="wrap">
-  <section class="hero" style="padding:48px 0 18px">
-    <h1 style="font-size:34px">Support</h1>
-    <p class="lead" style="font-size:18px">Everything you need to set up BavarianTranslator and have a smooth conversation.</p>
-  </section>
-
-  <div class="prose">
-    <h2>What the app does</h2>
-    <p>BavarianTranslator is a two-way, real-time conversation translator. The screen splits in half — <strong style="color:var(--de)">Deutsch · Oma</strong> on top and <strong style="color:var(--en)">English</strong> below. One person speaks, and the conversation appears in <em>both</em> languages at once. It’s specifically tuned to understand <strong>Bavarian dialect (Boarisch)</strong>, and it can speak the German translation slowly so an elderly listener can follow.</p>
-
-    <h2>Getting started</h2>
-    <p>Translation is powered by a cloud AI that you choose. The app uses <strong>your own free API key</strong>, so your usage stays private and free. It takes about a minute:</p>
-    <ol>
-      <li>Get a <strong>free API key</strong> (no credit card) from one of:
-        <ul>
-          <li><strong>Google Gemini</strong> — <a href="https://aistudio.google.com/apikey">aistudio.google.com/apikey</a> (best at dialect)</li>
-          <li><strong>Groq</strong> — <a href="https://console.groq.com/keys">console.groq.com/keys</a> (largest free allowance)</li>
-          <li><strong>Mistral</strong> — <a href="https://console.mistral.ai/api-keys">console.mistral.ai/api-keys</a></li>
-        </ul>
-      </li>
-      <li>Open the app, tap <strong>⚙︎ Settings → Translation engine</strong>, pick an engine, and paste the key.</li>
-      <li>Go back, choose a mode, and start talking.</li>
-    </ol>
-    <div class="callout">💡 You can add keys for more than one engine. If your chosen engine hits its daily limit, the app automatically switches to the next best one so your conversation never stops.</div>
-
-    <h2>The three modes</h2>
-    <table class="tbl">
-      <tr><th>Mode</th><th>How it works</th><th>Best for</th></tr>
-      <tr><td>👆 <strong>Tap</strong></td><td>Tap a mic, speak your turn, tap again. Most reliable.</td><td>Clear, controlled back-and-forth.</td></tr>
-      <tr><td>🔁 <strong>Auto</strong></td><td>Hands-free. It listens, detects who spoke, then translates and reads it aloud.</td><td>Natural conversation with Oma.</td></tr>
-      <tr><td>🔴 <strong>Live</strong></td><td>Streams the translated text as you speak, without waiting for you to finish.</td><td>Following a longer story.</td></tr>
-    </table>
-
-    <h2>Helpful settings</h2>
-    <ul>
-      <li><strong>Slow German for Oma</strong> — Settings → <em>German speech for Oma</em>. Choose <em>Sehr langsam</em>, <em>Langsam</em>, or <em>Mittel</em> so the spoken German is easy to follow.</li>
-      <li><strong>Face-to-face</strong> — flips the German half upside-down so the person across the table reads it the right way up.</li>
-      <li><strong>Sensitivity</strong> (Auto &amp; Live) — if it cuts you off or misses a quiet talker, set it more <em>Sensitive</em>; if it triggers on background noise, set it <em>Strict</em>.</li>
-      <li><strong>Replay</strong> — tap any line (🔊) to hear it spoken again.</li>
-    </ul>
-
-    <h2>Frequently asked questions</h2>
-
-    <details class="faq"><summary>Is the app free? Do I have to pay?</summary><div class="a">The app itself is free. Translation uses a cloud AI through a <strong>free API key</strong> you create — no credit card required. The free tiers have generous daily limits that are plenty for everyday conversations.</div></details>
-
-    <details class="faq"><summary>Why do I need to add my own API key?</summary><div class="a">It keeps the app free and your conversations private: requests go directly from your phone to the AI provider using <em>your</em> key. Nothing is routed through us.</div></details>
-
-    <details class="faq"><summary>Which engine is best for Bavarian dialect?</summary><div class="a">In our testing, <strong>Google Gemini</strong> handled dialect best, while <strong>Groq</strong> proved very robust on real Bavarian and has the largest free allowance, and <strong>Mistral</strong> is strong on clear German. Each engine shows a quality score in Settings so you can compare, and the app auto-switches if one is unavailable.</div></details>
-
-    <details class="faq"><summary>Is my conversation private?</summary><div class="a">Your audio is sent only to the translation provider you choose, using your own key, purely to produce the translation. We don’t collect, store, or see your audio or translations. Full details are in our <a href="privacy.html">Privacy Policy</a>.</div></details>
-
-    <details class="faq"><summary>It said “didn’t catch that.” What do I do?</summary><div class="a">Speak a little closer and clearly. In Auto/Live, try lowering the <em>Sensitivity</em> to “Sensitive” in Settings. Background noise and long silences can also trip it up.</div></details>
-
-    <details class="faq"><summary>It switched engines on its own — is that normal?</summary><div class="a">Yes. When an engine reaches its daily or per-minute limit, the app briefly shows “⚡ switched to …” and continues on the next best engine so your conversation isn’t interrupted. The limited engine re-enables itself automatically once its limit resets.</div></details>
-
-    <details class="faq"><summary>Does it work offline?</summary><div class="a">Translation needs an internet connection (it’s a cloud AI call). The spoken German voice itself works offline.</div></details>
-
-    <h2>Troubleshooting</h2>
-    <ul>
-      <li><strong>No translation appears</strong> — check your internet connection and confirm you added an API key in Settings → Translation engine.</li>
-      <li><strong>“API key rejected”</strong> — re-copy the key (no extra spaces) and paste it again.</li>
-      <li><strong>“Every engine hit its rate limit”</strong> — wait a little (limits reset within the hour, some overnight), or add a key for another engine so it can switch.</li>
-    </ul>
-
-    <h2>Contact us</h2>
-    <p>Still stuck, or have a suggestion? We’d love to hear from you:</p>
-    <p style="font-size:18px"><strong>📧 <a href="mailto:monkeytree2019@gmail.com">monkeytree2019@gmail.com</a></strong></p>
-    <p class="updated">We aim to reply within a couple of business days.</p>
-  </div>
-</main>
-
-<footer class="site-footer">
-  <div class="wrap">
-    <div>© 2026 BavarianTranslator</div>
-    <div>
-      <a href="index.html">Home</a>
-      <a href="privacy.html">Privacy</a>
-      <a href="mailto:monkeytree2019@gmail.com">Contact</a>
-    </div>
-  </div>
-</footer>
+  <p>Redirecting to <a href="index.html#support">Bavarian Translator support</a>…</p>
 </body>
 </html>
