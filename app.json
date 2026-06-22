@@ -7,11 +7,6 @@
     "scheme": "bavariantranslator",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "splash": {
-      "image": "./assets/splash-icon.png",
-      "resizeMode": "contain",
-      "backgroundColor": "#FFF6F2"
-    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.markutilitylabs.bavariantranslator",
@@ -46,7 +41,15 @@
           "microphonePermission": "Allow BavarianTranslator to use the microphone so it can hear and translate your conversation."
         }
       ],
-      "expo-asset"
+      "expo-asset",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#0c1f3a",
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 300
+        }
+      ]
     ]
   }
 }
