@@ -78,49 +78,75 @@
 
     /* ─── HERO ─── */
     .hero {
-      background: linear-gradient(135deg, #0c1f3a 0%, #1d5fb8 52%, #c8102e 112%);
+      position: relative;
+      overflow: hidden;
+      background: radial-gradient(125% 125% at 12% 8%, #1a3a72 0%, #0e2348 46%, #0a1730 100%);
       color: #fff;
-      padding: 82px 24px 64px;
-      text-align: center;
+      padding: 88px 24px 92px;
     }
-    .hero-icon {
-      width: 84px; height: 84px;
-      border-radius: 20px;
-      margin: 0 auto 22px;
-      display: block;
-      box-shadow: 0 12px 32px rgba(0,0,0,.32), 0 0 0 1px rgba(255,255,255,.12);
+    /* soft colour glows for depth */
+    .hero::before, .hero::after {
+      content: ""; position: absolute; border-radius: 50%;
+      filter: blur(80px); opacity: .5; pointer-events: none; z-index: 0;
     }
-    .hero-eyebrow {
-      font-size: 11px; letter-spacing: 2.5px; font-weight: 700;
-      color: rgba(255,255,255,.7); text-transform: uppercase; margin-bottom: 16px;
+    .hero::before { width: 480px; height: 480px; background: #c8102e; top: -140px; right: -90px; }
+    .hero::after  { width: 440px; height: 440px; background: #1d5fb8; bottom: -180px; left: -120px; }
+
+    .hero-inner {
+      position: relative; z-index: 1;
+      max-width: 1080px; margin: 0 auto;
+      display: grid; grid-template-columns: 1.05fr .95fr;
+      gap: 52px; align-items: center;
     }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 9px;
+      background: rgba(255,255,255,.09); border: 1px solid rgba(255,255,255,.18);
+      color: #fff; padding: 7px 14px 7px 8px; border-radius: 999px;
+      font-size: 11px; font-weight: 700; letter-spacing: 1.4px; text-transform: uppercase;
+      margin-bottom: 22px;
+    }
+    .hero-badge img { width: 22px; height: 22px; border-radius: 6px; }
     .hero h1 {
-      font-size: clamp(34px, 6.6vw, 60px);
-      font-weight: 800; letter-spacing: -1px; line-height: 1.1;
-      margin-bottom: 18px;
+      font-size: clamp(36px, 4.6vw, 56px);
+      font-weight: 800; letter-spacing: -1.4px; line-height: 1.05;
+      margin-bottom: 20px;
     }
-    .hero h1 em { color: #bcd7ff; font-style: italic; }
-    .hero p {
-      font-size: 17px; color: rgba(255,255,255,.82);
-      max-width: 560px; margin: 0 auto 36px;
+    .hero h1 em {
+      font-style: italic;
+      background: linear-gradient(92deg, #ff9aa8, #bcd7ff);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
     }
-    .hero-pills { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; }
+    .hero-copy p {
+      font-size: 17px; color: rgba(255,255,255,.8); line-height: 1.6;
+      max-width: 480px; margin-bottom: 30px;
+    }
+    .hero-copy p strong { color: #fff; }
+    .hero-cta { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 28px; }
     .pill {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 9px 18px; border-radius: 999px;
-      font-size: 13px; font-weight: 700;
-      text-decoration: none; transition: opacity .15s;
+      padding: 12px 22px; border-radius: 999px;
+      font-size: 14px; font-weight: 700;
+      text-decoration: none; transition: transform .15s, box-shadow .15s, opacity .15s;
     }
-    .pill:hover { opacity: .88; }
-    .pill-primary { background: var(--accent); color: #fff; }
-    .pill-outline { background: transparent; color: #fff; border: 2px solid rgba(255,255,255,.45); }
+    .pill-primary { background: var(--accent); color: #fff; box-shadow: 0 10px 26px rgba(200,16,46,.42); }
+    .pill-primary:hover { transform: translateY(-2px); box-shadow: 0 14px 32px rgba(200,16,46,.5); }
+    .pill-outline { background: rgba(255,255,255,.04); color: #fff; border: 1.5px solid rgba(255,255,255,.4); }
+    .pill-outline:hover { background: rgba(255,255,255,.12); }
+    .hero-trust { display: flex; gap: 20px; flex-wrap: wrap; }
+    .hero-trust span {
+      display: inline-flex; align-items: center; gap: 7px;
+      font-size: 13.5px; font-weight: 600; color: rgba(255,255,255,.74);
+    }
+    .hero-trust .chk { color: #6fe09a; font-weight: 800; }
 
-    /* ─── SCREENSHOTS ─── */
-    .screenshots-section {
-      padding: 72px 24px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--rule);
+    .hero-visual { display: flex; justify-content: center; position: relative; }
+    .hero-phone {
+      width: 280px; max-width: 78vw;
+      background: #0c0c0f; border-radius: 40px; padding: 9px;
+      box-shadow: 0 44px 90px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.08);
     }
+    .hero-phone img { width: 100%; border-radius: 32px; display: block; }
+
     .section-label {
       font-size: 11px; letter-spacing: 2px; font-weight: 700;
       color: var(--accent); text-transform: uppercase; margin-bottom: 8px;
@@ -135,39 +161,64 @@
       max-width: 560px; margin: 0 auto 48px;
     }
 
-    .screenshots-scroll {
-      display: flex;
-      gap: 22px;
-      overflow-x: auto;
-      padding: 12px 4px 20px;
-      scroll-snap-type: x mandatory;
+    /* ─── GALLERY (cinematic carousel) ─── */
+    .gallery-section {
+      position: relative;
+      padding: 78px 0 86px;
+      background: radial-gradient(110% 110% at 50% 0%, #15295010 0%, #0d2046 0%, #0a1730 100%);
+      color: #fff;
+      overflow: hidden;
+      border-bottom: 1px solid rgba(255,255,255,.06);
+    }
+    .gallery-head { text-align: center; padding: 0 24px; margin-bottom: 42px; }
+    .gallery-section .section-label { color: #ff9aa8; }
+    .gallery-section .section-title { color: #fff; }
+    .gallery-section .section-sub { color: rgba(255,255,255,.66); margin-bottom: 0; }
+
+    .gallery-wrap { position: relative; max-width: 1180px; margin: 0 auto; }
+    .gallery-track {
+      display: flex; gap: 22px;
+      overflow-x: auto; scroll-snap-type: x mandatory;
+      padding: 10px 40px 26px;
       -webkit-overflow-scrolling: touch;
-      justify-content: center;
-      flex-wrap: wrap;
+      scrollbar-width: none;
     }
-    .screenshot-frame {
-      flex: 0 0 auto;
-      width: 224px;
-      scroll-snap-align: start;
-      text-align: center;
+    .gallery-track::-webkit-scrollbar { display: none; }
+    .gallery-card {
+      flex: 0 0 auto; width: 252px;
+      scroll-snap-align: center;
+      border-radius: 28px; overflow: hidden;
+      background: #0c1f3a;
+      box-shadow: 0 26px 54px rgba(0,0,0,.46), 0 0 0 1px rgba(255,255,255,.06);
+      transition: transform .25s ease, box-shadow .25s ease;
     }
-    .screenshot-device {
-      background: #1a1a1a;
-      border-radius: 32px;
-      padding: 11px;
-      box-shadow: 0 24px 60px rgba(12,31,58,.22), 0 4px 12px rgba(0,0,0,.12);
-      display: inline-block;
-      width: 100%;
+    .gallery-card:hover { transform: translateY(-7px); box-shadow: 0 34px 66px rgba(0,0,0,.55), 0 0 0 1px rgba(255,255,255,.12); }
+    .gallery-card img { width: 100%; display: block; }
+
+    /* edge fades */
+    .gallery-wrap::before, .gallery-wrap::after {
+      content: ""; position: absolute; top: 0; bottom: 0; width: 90px; z-index: 2; pointer-events: none;
     }
-    .screenshot-device img {
-      width: 100%;
-      border-radius: 22px;
-      display: block;
+    .gallery-wrap::before { left: 0; background: linear-gradient(90deg, #0b1c3c, rgba(11,28,60,0)); }
+    .gallery-wrap::after  { right: 0; background: linear-gradient(270deg, #0b1c3c, rgba(11,28,60,0)); }
+
+    /* nav arrows */
+    .gallery-nav {
+      position: absolute; top: 50%; transform: translateY(-50%); z-index: 3;
+      width: 46px; height: 46px; border-radius: 50%;
+      border: 1px solid rgba(255,255,255,.25); background: rgba(18,30,58,.72);
+      color: #fff; font-size: 22px; line-height: 1; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: background .15s, transform .15s;
     }
-    .screenshot-caption {
-      margin-top: 14px;
-      font-size: 12px; font-weight: 700; color: var(--muted);
-      letter-spacing: 0.5px; text-transform: uppercase;
+    .gallery-nav:hover { background: rgba(40,62,108,.95); }
+    .gallery-nav:active { transform: translateY(-50%) scale(.94); }
+    .gallery-nav.prev { left: 14px; }
+    .gallery-nav.next { right: 14px; }
+    .gallery-hint {
+      text-align: center; margin-top: 10px;
+      font-size: 12px; font-weight: 600; letter-spacing: .5px;
+      color: rgba(255,255,255,.42);
     }
 
     /* ─── FEATURES GRID ─── */
@@ -377,6 +428,14 @@
     .footer-links a { color: rgba(255,255,255,.55); font-size: 13px; text-decoration: none; }
     .footer-links a:hover { color: rgba(255,255,255,.92); }
 
+    @media (max-width: 860px) {
+      .hero { padding: 70px 24px 74px; }
+      .hero-inner { grid-template-columns: 1fr; gap: 44px; text-align: center; }
+      .hero-copy p { margin-left: auto; margin-right: auto; }
+      .hero-cta, .hero-trust { justify-content: center; }
+      .hero-visual { order: 2; }
+    }
+
     @media (max-width: 600px) {
       nav { padding: 0 16px; }
       .nav-brand { font-size: 17px; gap: 6px; }
@@ -384,7 +443,9 @@
       .nav-links { gap: 16px; }
       .nav-links a { font-size: 13px; }
       .contact-card { flex-direction: column; gap: 12px; }
-      .screenshots-scroll { flex-wrap: nowrap; justify-content: flex-start; }
+      .gallery-track { padding: 10px 20px 24px; }
+      .gallery-nav { display: none; }
+      .gallery-wrap::before, .gallery-wrap::after { width: 40px; }
     }
   </style>
 </head>
@@ -401,48 +462,53 @@
 
 <!-- HERO -->
 <section class="hero">
-  <img src="icon.png" alt="Bavarian Translator app icon" class="hero-icon" />
-  <p class="hero-eyebrow">Real-Time German ↔ English · Bavarian Dialect</p>
-  <h1>Talk across the table in<br><em>two languages at once</em></h1>
-  <p>A real-time, two-way conversation translator between a German speaker — even in broad <strong style="color:#fff">Bavarian dialect</strong> — and an English speaker. Built so Oma can follow along, in slow, clear German.</p>
-  <div class="hero-pills">
-    <a href="#support" class="pill pill-primary">🙋 Get support</a>
-    <a href="#privacy" class="pill pill-outline">🔒 Privacy policy</a>
+  <div class="hero-inner">
+    <div class="hero-copy">
+      <span class="hero-badge"><img src="icon.png" alt="Bavarian Translator app icon" /> Real-Time German ↔ English</span>
+      <h1>Talk across the table in <em>two languages at once</em></h1>
+      <p>A real-time, two-way conversation translator between a German speaker — even in broad <strong>Bavarian dialect</strong> — and an English speaker. Built so Oma can follow along, in slow, clear German.</p>
+      <div class="hero-cta">
+        <a href="#support" class="pill pill-primary">🙋 Get support</a>
+        <a href="#privacy" class="pill pill-outline">🔒 Privacy policy</a>
+      </div>
+      <div class="hero-trust">
+        <span><span class="chk">✓</span> Free forever</span>
+        <span><span class="chk">✓</span> No account</span>
+        <span><span class="chk">✓</span> Private by design</span>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="hero-phone">
+        <img src="screenshots/translate.png" alt="The app showing a live German–English conversation in red and blue bubbles" />
+      </div>
+    </div>
   </div>
 </section>
 
-<!-- SCREENSHOTS -->
-<section class="screenshots-section">
-  <p class="section-label">Inside the app</p>
-  <h2 class="section-title">One screen, both languages</h2>
-  <p class="section-sub">The display splits in half — Deutsch · Oma on top, English below. One person speaks, and the conversation appears in both languages at once.</p>
+<!-- GALLERY -->
+<section class="gallery-section">
+  <div class="gallery-head">
+    <p class="section-label">Inside the app</p>
+    <h2 class="section-title">See it in action</h2>
+    <p class="section-sub">From understanding broad Bavarian to slowing the voice down for Oma — here's everything the app does, screen by screen.</p>
+  </div>
 
-  <div class="screenshots-scroll">
-    <div class="screenshot-frame">
-      <div class="screenshot-device">
-        <img src="screenshots/home.png" alt="Split-screen home with German on top and English below" loading="lazy" />
-      </div>
-      <p class="screenshot-caption">Tap to Talk</p>
-    </div>
-    <div class="screenshot-frame">
-      <div class="screenshot-device">
-        <img src="screenshots/translate.png" alt="Live translation streaming into the German and English panes" loading="lazy" />
-      </div>
-      <p class="screenshot-caption">Live Translation</p>
-    </div>
-    <div class="screenshot-frame">
-      <div class="screenshot-device">
-        <img src="screenshots/live.png" alt="A back-and-forth conversation shown in German and English bubbles" loading="lazy" />
-      </div>
-      <p class="screenshot-caption">Conversation Flow</p>
-    </div>
-    <div class="screenshot-frame">
-      <div class="screenshot-device">
-        <img src="screenshots/settings.png" alt="Settings showing the translation-engine picker with quality scores" loading="lazy" />
-      </div>
-      <p class="screenshot-caption">Choose Your Engine</p>
+  <div class="gallery-wrap">
+    <button class="gallery-nav prev" id="galleryPrev" aria-label="Previous screenshots">‹</button>
+    <button class="gallery-nav next" id="galleryNext" aria-label="Next screenshots">›</button>
+    <div class="gallery-track" id="galleryTrack">
+      <div class="gallery-card"><img src="gallery/01-hero.jpg" alt="Bavarian Translator — real-time German to English, free forever" loading="lazy" /></div>
+      <div class="gallery-card"><img src="gallery/02-hero.jpg" alt="A live German–English conversation in the app" loading="lazy" /></div>
+      <div class="gallery-card"><img src="gallery/03-dialect.jpg" alt="Understands broad Bavarian dialect, not just standard German" loading="lazy" /></div>
+      <div class="gallery-card"><img src="gallery/04-facetoface.jpg" alt="Face-to-face mode flips the German half for the person across the table" loading="lazy" /></div>
+      <div class="gallery-card"><img src="gallery/05-live.jpg" alt="Live mode streams the translation as you speak" loading="lazy" /></div>
+      <div class="gallery-card"><img src="gallery/06-handsfree.jpg" alt="Hands-free auto mode detects who is speaking" loading="lazy" /></div>
+      <div class="gallery-card"><img src="gallery/07-engines.jpg" alt="Choose your AI engine — Gemini, Llama, or Voxtral — with quality scores" loading="lazy" /></div>
+      <div class="gallery-card"><img src="gallery/08-failover.jpg" alt="Automatic failover keeps the conversation going when an engine hits its limit" loading="lazy" /></div>
+      <div class="gallery-card"><img src="gallery/09-free.jpg" alt="Free forever — uses your own free API key" loading="lazy" /></div>
     </div>
   </div>
+  <p class="gallery-hint">← swipe or scroll to explore all 9 screens →</p>
 </section>
 
 <!-- FEATURES -->
@@ -661,6 +727,22 @@
     <a href="https://github.com/vibe-checked/bavarian-translator">GitHub</a>
   </div>
 </footer>
+
+<script>
+  (function () {
+    var track = document.getElementById('galleryTrack');
+    if (!track) return;
+    function step() {
+      var card = track.querySelector('.gallery-card');
+      var w = card ? card.getBoundingClientRect().width : 252;
+      return (w + 22) * 2; /* advance ~two cards */
+    }
+    var prev = document.getElementById('galleryPrev');
+    var next = document.getElementById('galleryNext');
+    if (prev) prev.addEventListener('click', function () { track.scrollBy({ left: -step(), behavior: 'smooth' }); });
+    if (next) next.addEventListener('click', function () { track.scrollBy({ left: step(), behavior: 'smooth' }); });
+  })();
+</script>
 
 </body>
 </html>
