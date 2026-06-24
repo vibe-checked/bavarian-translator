@@ -22,7 +22,10 @@
     "android": {
       "package": "com.markutilitylabs.bavariantranslator",
       "permissions": [
-        "android.permission.RECORD_AUDIO"
+        "android.permission.RECORD_AUDIO",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
       ],
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -51,6 +54,12 @@
           "imageWidth": 300
         }
       ]
-    ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "a3bb2cec-8781-41e6-9ff8-52624741927e"
+      }
+    },
+    "owner": "kiddkevin01"
   }
 }
