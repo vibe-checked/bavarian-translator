@@ -3,7 +3,8 @@
 
 You should not need to edit this file. Put your settings in config.py and your
 raw simulator screenshots in raw/, then run:  python3 compose.py
-Output: 01-hero.png, 02-hero.png, 03-…, … into config.OUT_DIR.
+Output: 01-hero.png, 02-hero.png, 03-…, … into config.OUT_DIR, each sized
+1284x2778 — ready to upload straight to App Store Connect with no resizing.
 
 Layout (1320x2868, the 6.9" / iPhone 17 Pro Max canvas):
   - Screens 1+2 are ONE tilted phone spanning a 2-wide composite, then sliced
@@ -17,11 +18,22 @@ import os
 from PIL import Image, ImageDraw, ImageFont, ImageFilter
 import config as C
 
-W, H = 1320, 2868
+W, H = 1320, 2868                         # design canvas (6.9" aspect)
+
+# App Store Connect's iPhone screenshot slot accepts the 6.5" display size.
+# We compose on the canvas above, then resize every output to exactly this so
+# the PNGs upload STRAIGHT to App Store Connect — no cropping/resizing needed.
+# (1320x2868 -> 1284x2778 is a ~0.4% squish, visually imperceptible.)
+# If a future app's ASC shows a 6.9"-only slot instead, set this to 1290, 2796.
+STORE_W, STORE_H = 1284, 2778
+
 HERE = os.path.dirname(os.path.abspath(__file__))
 RAW = os.path.join(HERE, C.RAW_DIR)
 OUT = os.path.join(HERE, C.OUT_DIR)
 os.makedirs(OUT, exist_ok=True)
+
+def save_store(img, path):                # resize to the App-Store-ready size, then save
+    img.convert("RGB").resize((STORE_W, STORE_H), Image.LANCZOS).save(path)
 
 def font(sz, bold=True):
     paths = (["/System/Library/Fonts/Supplemental/Arial Bold.ttf"] if bold
@@ -114,8 +126,8 @@ def hero(shot_path):
     ph = device(Image.open(shot_path).convert("RGB"), sw=C.HERO_SW).rotate(C.HERO_TILT, expand=True, resample=Image.BICUBIC)
     px = C.HERO_PX; py = (H - ph.size[1]) // 2
     shadow(c, ph, px, py, blur=42); c.alpha_composite(ph, (px, py))
-    c.crop((0, 0, W, H)).convert("RGB").save(os.path.join(OUT, "01-hero.png"))
-    c.crop((W, 0, CW, H)).convert("RGB").save(os.path.join(OUT, "02-hero.png"))
+    save_store(c.crop((0, 0, W, H)), os.path.join(OUT, "01-hero.png"))
+    save_store(c.crop((W, 0, CW, H)), os.path.join(OUT, "02-hero.png"))
     print("wrote 01-hero, 02-hero")
 
 def panel(idx, label, headline, shot_path, vpos, sub):
@@ -133,7 +145,7 @@ def panel(idx, label, headline, shot_path, vpos, sub):
     ey = rich(d, seg(headline), ty, W - 130, hf, bf, lh=98, bold_fill=bold_fill)
     if sub: rich(d, seg(sub), ey + 14, W - 150, sf, sbf, fill=(*C.SUBTITLE, 255), lh=60)
     shadow(c, ph, x, py); c.alpha_composite(ph, (x, py))
-    out = f"{idx:02d}-{label}.png"; c.convert("RGB").save(os.path.join(OUT, out)); print("wrote", out)
+    out = f"{idx:02d}-{label}.png"; save_store(c, os.path.join(OUT, out)); print("wrote", out)
 
 if __name__ == "__main__":
     hero(os.path.join(RAW, C.HERO_SHOT))

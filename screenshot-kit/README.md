@@ -4,8 +4,12 @@ Generates App Store screenshots in a consistent "BolTools" style — a device-fr
 phone on a branded gradient with a headline + subtitle. **Every app uses the same
 layout; you only change the raw screenshots and the text/colors.**
 
-Output is `1320 × 2868` (the 6.9" / iPhone 17 Pro Max size). The same set is
-accepted for the 6.7" slot in App Store Connect, so this one size covers both.
+Output is `1284 × 2778` — the iPhone 6.5" display size that App Store Connect's
+screenshot slot accepts. **The PNGs upload straight to App Store Connect with no
+resizing or cropping.** (Internally the kit composes on a 1320 × 2868 canvas, then
+resizes each final image to 1284 × 2778 on save — see `STORE_W, STORE_H` in
+`compose.py`. If an app's ASC ever shows a 6.9"-only slot, set those to
+`1290, 2796`.)
 
 ## Standing positioning: always free, no catch
 Every app Marcus ships is **free forever — no ads, no in-app purchases, no
