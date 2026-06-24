@@ -45,3 +45,6 @@ yarn-error.*
 
 # Local dialect re-test fixtures (audio clips + script)
 .dialect-retest/
+
+# JetBrains IDE
+.idea/
