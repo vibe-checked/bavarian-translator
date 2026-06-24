@@ -12,6 +12,7 @@
       "bundleIdentifier": "com.markutilitylabs.bavariantranslator",
       "buildNumber": "1",
       "infoPlist": {
+        "CFBundleDisplayName": "Bavarian Translator",
         "UIBackgroundModes": [
           "audio"
         ],
