@@ -48,3 +48,4 @@ yarn-error.*
 
 # JetBrains IDE
 .idea/
+.vercel
