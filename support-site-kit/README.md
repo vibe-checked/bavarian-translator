@@ -39,9 +39,9 @@ The page sections, in this exact order (never reorder):
 
 These never change, regardless of the app:
 
-1. **Contact email is always `monkeytree2019@gmail.com`.** Never invent another
-   address (no `support@…` custom domains — they bounce). It is already baked
-   into `template.html`; do not change it.
+1. **Contact email is always `mark@vibecode.review`.** It's a real, monitored
+   address and is already baked into `template.html`; do not change it. Never
+   invent any OTHER address (no made-up `support@…` domains — they bounce).
 2. **Publisher / company name is `Mark Utility Labs`.** Already in the template.
 3. **Bundle ID must start with `com.markutilitylabs.`** Check the repo's
    `app.json` (`ios.bundleIdentifier` and `android.package`). If it uses a
@@ -200,7 +200,7 @@ stale `screenshots/` folders, etc.) so nothing dangles.
   Confirm: hero renders with the device shot, the gallery scrolls and the
   arrows work, `#support`/`#privacy` anchors jump correctly, mobile layout
   stacks cleanly, and there are **no console errors**.
-- **Sanity-grep:** the page contains `monkeytree2019@gmail.com`, has
+- **Sanity-grep:** the page contains `mark@vibecode.review`, has
   `id="support"` and `id="privacy"`, and contains **no leftover `{{`**.
 - **Commit & push** (Conventional Commits, author Marcus Hsu, no co-author) to
   the **default branch**. Confirm GitHub Pages rebuilds and the URL returns 200.
@@ -300,7 +300,7 @@ what's **true**. The usual set for a Mark Utility Labs local-first utility:
    section entirely if nothing leaves the device.
 6. **Children's privacy** — not directed at under-13s; collects no personal data.
 7. **Changes to this policy** — "Last updated" date governs.
-8. **Contact us** — Mark Utility Labs + `monkeytree2019@gmail.com`.
+8. **Contact us** — Mark Utility Labs + `mark@vibecode.review`.
 
 Renumber so "Contact us" is last. Match the policy to the app: a fully offline
 app has no "third-party services" section; an app that calls an API must
@@ -318,7 +318,7 @@ disclose it honestly.
 - [ ] `docs/icon.png` (≤512px) + `docs/favicon.png` present
 - [ ] `docs/support.html` + `docs/privacy.html` are redirect stubs
 - [ ] Old site files removed from `docs/`
-- [ ] Contact email is `monkeytree2019@gmail.com` everywhere; publisher is
+- [ ] Contact email is `mark@vibecode.review` everywhere; publisher is
       `Mark Utility Labs`
 - [ ] Previewed: hero, gallery scroll + arrows, anchors, mobile, no console errors
 - [ ] Committed (Conventional Commits, author Marcus Hsu, no co-author) and
