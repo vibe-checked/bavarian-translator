@@ -29,7 +29,7 @@ interface Notice {
 
 export default function App() {
   const { settings, ready, update } = useSettings();
-  const recorder = useRecorder(settings.backgroundListening);
+  const recorder = useRecorder(settings.backgroundListening, settings.autoSpeechThresholdDb);
 
   const [utterances, setUtterances] = useState<Utterance[]>([]);
   const [activePane, setActivePane] = useState<Lang | null>(null); // pane currently recording (tap mode)
@@ -186,6 +186,13 @@ export default function App() {
       setActivePane(null);
       if (!clip) {
         showInfo('No audio captured — try holding a little longer.');
+        return;
+      }
+      if (!clip.hadSpeech) {
+        // No real speech crossed the threshold — skip the API call entirely so
+        // silence/background noise can't be mistaken for a hallucinated reply
+        // (e.g. ASR models often return a stock "Thank you" on pure silence).
+        showInfo(pane === 'de' ? '🔇 Hab ich nicht verstanden — nochmal?' : "🔇 Didn't catch that — try again");
         return;
       }
       setBusyPane(pane);
