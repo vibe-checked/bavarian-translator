@@ -94,8 +94,8 @@ export const mistralProvider: TranslationProvider = {
   // as "ein paar Deutsch" (a meaning flip) where Whisper got it right — so it sits a
   // notch under Groq. Voxtral is shared by both models; the model only changes cleanup.
   models: [
-    { id: 'mistral-large-latest', label: 'Mistral Large — best cleanup', score: 60, quota: 'free tier' },
-    { id: 'mistral-small-latest', label: 'Mistral Small (faster)', score: 56, quota: 'free tier' },
+    { id: 'mistral-large-latest', label: 'Mistral Large — best cleanup', score: 60, quota: '' },
+    { id: 'mistral-small-latest', label: 'Mistral Small (faster)', score: 56, quota: '' },
   ],
   defaultModel: 'mistral-large-latest',
   allowCustomModel: true,

@@ -401,11 +401,11 @@ function ModelRow({
     >
       <View style={styles.modelLeft}>
         <Text style={[styles.voiceText, active ? styles.voiceTextActive : null]}>{model.label}</Text>
-        <Text style={[styles.modelQuota, cooled ? styles.modelQuotaCooled : null]}>
-          {cooled
-            ? `⏳ Rate-limited · tap to retry now (auto in ${fmtRemaining(remainingMs ?? 0)})`
-            : model.quota}
-        </Text>
+        {cooled ? (
+          <Text style={[styles.modelQuota, styles.modelQuotaCooled]}>
+            ⏳ Rate-limited · tap to retry now (auto in {fmtRemaining(remainingMs ?? 0)})
+          </Text>
+        ) : null}
       </View>
       <View style={styles.modelRight}>
         {nowUsing ? <Text style={styles.nowUsing}>● using</Text> : null}

@@ -103,9 +103,9 @@ export const groqProvider: TranslationProvider = {
   // Still set below Gemini pending a real heavy-dialect head-to-head (Gemini quota-blocked
   // on test day). Huge free quota makes this the best practical everyday default.
   models: [
-    { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B — best cleanup', score: 70, quota: '1000s/day free' },
-    { id: 'meta-llama/llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout', score: 67, quota: '1000s/day free' },
-    { id: 'qwen/qwen3-32b', label: 'Qwen3 32B', score: 65, quota: '1000s/day free' },
+    { id: 'llama-3.3-70b-versatile', label: 'Llama 3.3 70B — best cleanup', score: 70, quota: '' },
+    { id: 'meta-llama/llama-4-scout-17b-16e-instruct', label: 'Llama 4 Scout', score: 67, quota: '' },
+    { id: 'qwen/qwen3-32b', label: 'Qwen3 32B', score: 65, quota: '' },
   ],
   defaultModel: 'llama-3.3-70b-versatile',
   allowCustomModel: true,

@@ -96,8 +96,8 @@ export const geminiProvider: TranslationProvider = {
   // was exhausted during real-audio testing, so its REAL spontaneous-dialect quality
   // is still UNCONFIRMED (Groq's was validated and raised). Pending a real head-to-head.
   models: [
-    { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash — best free', score: 82, quota: '~20/day free' },
-    { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite — fastest', score: 72, quota: 'free · daily cap' },
+    { id: 'gemini-2.5-flash', label: 'Gemini 2.5 Flash — best', score: 82, quota: '' },
+    { id: 'gemini-2.5-flash-lite', label: 'Gemini 2.5 Flash-Lite — fastest', score: 72, quota: '' },
   ],
   defaultModel: 'gemini-2.5-flash',
   allowCustomModel: true,
