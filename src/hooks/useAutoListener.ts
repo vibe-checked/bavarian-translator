@@ -12,8 +12,19 @@ const MAX_WAIT_MS = 8000;
 //  - endSilence: how long a pause ends a chunk. Shorter = more "live".
 //  - minSpeech:  minimum voiced time to count as a chunk (rejects coughs).
 //  - softMax:    in Live, flush a chunk this often even with no pause (run-ons). 0 = off.
-const TURN = { endSilence: 1100, minSpeech: 350, softMax: 0 };
-const LIVE = { endSilence: 500, minSpeech: 250, softMax: 4500 };
+// Tuned against published references rather than guessed: OpenAI's Realtime
+// API (a deployed, natural-feeling conversational agent) defaults its
+// speech-stop silence to 500ms; Deepgram explicitly recommends >=1000ms for a
+// FULL utterance boundary (vs. its separate fast ~10ms partial-result cutoff)
+// specifically to avoid mis-reading a mid-sentence breath as "done talking";
+// and simultaneous-translation literature cites chunk sizes of 300ms-2s.
+// Auto's endSilence sits between those two (it can't be interrupted once it
+// commits to a translate+speak readback, so it's biased conservative vs. an
+// interruptible agent). Live's softMax was the clear outlier — 4.5s of total
+// silence-on-screen during a run-on sentence is well past the 2s upper bound
+// even literature uses for "this still feels live".
+const TURN = { endSilence: 800, minSpeech: 350, softMax: 0 };
+const LIVE = { endSilence: 450, minSpeech: 250, softMax: 2200 };
 
 const now = () => Date.now();
 const msg = (e: any) => (e?.message ? String(e.message) : String(e));
