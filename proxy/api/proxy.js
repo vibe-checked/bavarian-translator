@@ -1,32 +1,18 @@
-// Bavarian Translator — key proxy.
+// Bavarian Translator — key proxy (Edge Runtime).
 //
-// Holds the Gemini / Groq / Mistral API keys server-side so they are never
-// shipped in the app bundle. The app sends the SAME request shapes it used to
-// send directly to each provider; this function injects the secret key and
-// forwards the request upstream, passing the response (status + body +
-// retry-after) straight back so the app's existing failover/cooldown logic
-// keeps working unchanged.
+// Holds the Gemini / Groq / Mistral API keys server-side and injects them. Runs
+// on Vercel's Edge Runtime (V8 isolates) so there's effectively no cold start
+// and it executes at the POP nearest the user — minimising the latency the proxy
+// hop adds over talking to each provider directly.
 //
-// Route is selected via ?route=  (gemini | groq/chat | groq/transcribe |
-// mistral/chat | mistral/transcribe), with ?model= for gemini.
+// Route via ?route=  (gemini | groq/chat | groq/transcribe | mistral/chat |
+// mistral/transcribe), with ?model= for gemini.
 //
-// Defense in depth (not a substitute for App Attest, but raises the bar and is
-// centrally revocable without an app update):
-//   • x-app-key shared token gate
-//   • per-route upstream allowlist
-//   • model prefix allowlist (limits which models our key can be used for)
-//   • only POST is forwarded
+// Defense in depth: x-app-key gate, per-route upstream allowlist, model prefix
+// allowlist. Only POST is forwarded.
 
-export const config = { api: { bodyParser: false } };
+export const config = { runtime: 'edge' };
 
-const APP_KEY = process.env.APP_PROXY_TOKEN || '';
-const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
-const GROQ_KEY = process.env.GROQ_API_KEY || '';
-const MISTRAL_KEY = process.env.MISTRAL_API_KEY || '';
-
-// Which model id prefixes our key may be used for, per provider. Keeps the
-// blast radius small if the app token ever leaks (can't be used to call
-// arbitrary expensive models on our account).
 const MODEL_ALLOW = {
   gemini: [/^gemini-/i],
   groq: [/^llama-/i, /^meta-llama\//i, /^qwen\//i, /^whisper-/i],
@@ -38,89 +24,73 @@ function modelAllowed(provider, model) {
   return (MODEL_ALLOW[provider] || []).some((re) => re.test(model));
 }
 
-async function readRawBody(req) {
-  const chunks = [];
-  for await (const chunk of req) chunks.push(chunk);
-  return Buffer.concat(chunks);
+function json(status, obj) {
+  return new Response(JSON.stringify(obj), { status, headers: { 'content-type': 'application/json' } });
 }
 
-export default async function handler(req, res) {
-  if (req.method !== 'POST') {
-    res.status(405).json({ error: 'method not allowed' });
-    return;
-  }
-  if (!APP_KEY || req.headers['x-app-key'] !== APP_KEY) {
-    res.status(401).json({ error: 'unauthorized' });
-    return;
-  }
+export default async function handler(req) {
+  if (req.method !== 'POST') return json(405, { error: 'method not allowed' });
 
-  const route = String(req.query.route || ''); // e.g. "gemini", "groq/chat"
-  const body = await readRawBody(req);
-  const contentType = req.headers['content-type'] || 'application/octet-stream';
+  const APP_KEY = process.env.APP_PROXY_TOKEN || '';
+  if (!APP_KEY || req.headers.get('x-app-key') !== APP_KEY) return json(401, { error: 'unauthorized' });
 
-  let url;
-  const headers = {};
+  const url = new URL(req.url);
+  const route = url.searchParams.get('route') || '';
+  const contentType = req.headers.get('content-type') || 'application/octet-stream';
+  const body = await req.arrayBuffer();
+
+  const GEMINI_KEY = process.env.GEMINI_API_KEY || '';
+  const GROQ_KEY = process.env.GROQ_API_KEY || '';
+  const MISTRAL_KEY = process.env.MISTRAL_API_KEY || '';
+
+  let target;
+  const headers = { 'content-type': contentType };
 
   try {
     if (route === 'gemini') {
-      const model = String(req.query.model || '');
-      if (!modelAllowed('gemini', model)) {
-        res.status(400).json({ error: `model not allowed: ${model}` });
-        return;
-      }
+      const model = url.searchParams.get('model') || '';
+      if (!modelAllowed('gemini', model)) return json(400, { error: `model not allowed: ${model}` });
       if (!GEMINI_KEY) throw new Error('server missing GEMINI_API_KEY');
-      url =
+      target =
         `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}` +
         `:generateContent?key=${GEMINI_KEY}`;
-      headers['content-type'] = contentType;
     } else if (route === 'groq/chat' || route === 'mistral/chat') {
       const provider = route.split('/')[0];
-      // Chat bodies are JSON — validate the model before spending our key.
       let model = '';
       try {
-        model = JSON.parse(body.toString('utf8'))?.model || '';
+        model = JSON.parse(new TextDecoder().decode(body))?.model || '';
       } catch {
-        /* fall through to allowlist reject */
+        /* reject below */
       }
-      if (!modelAllowed(provider, model)) {
-        res.status(400).json({ error: `model not allowed: ${model}` });
-        return;
-      }
+      if (!modelAllowed(provider, model)) return json(400, { error: `model not allowed: ${model}` });
       const key = provider === 'groq' ? GROQ_KEY : MISTRAL_KEY;
       if (!key) throw new Error(`server missing ${provider} key`);
-      url =
+      target =
         provider === 'groq'
           ? 'https://api.groq.com/openai/v1/chat/completions'
           : 'https://api.mistral.ai/v1/chat/completions';
-      headers['content-type'] = contentType;
       headers['authorization'] = `Bearer ${key}`;
     } else if (route === 'groq/transcribe' || route === 'mistral/transcribe') {
       const provider = route.split('/')[0];
       const key = provider === 'groq' ? GROQ_KEY : MISTRAL_KEY;
       if (!key) throw new Error(`server missing ${provider} key`);
-      url =
+      target =
         provider === 'groq'
           ? 'https://api.groq.com/openai/v1/audio/transcriptions'
           : 'https://api.mistral.ai/v1/audio/transcriptions';
-      // Multipart: forward the body + boundary verbatim, just add auth.
-      headers['content-type'] = contentType;
       headers['authorization'] = `Bearer ${key}`;
     } else {
-      res.status(404).json({ error: `unknown route: ${route}` });
-      return;
+      return json(404, { error: `unknown route: ${route}` });
     }
 
-    const upstream = await fetch(url, { method: 'POST', headers, body });
-    const buf = Buffer.from(await upstream.arrayBuffer());
-
-    // Pass through the bits the app's failover layer reads.
-    res.status(upstream.status);
+    const upstream = await fetch(target, { method: 'POST', headers, body });
+    const out = new Headers();
     const ct = upstream.headers.get('content-type');
-    if (ct) res.setHeader('content-type', ct);
+    if (ct) out.set('content-type', ct);
     const ra = upstream.headers.get('retry-after');
-    if (ra) res.setHeader('retry-after', ra);
-    res.send(buf);
+    if (ra) out.set('retry-after', ra);
+    return new Response(upstream.body, { status: upstream.status, headers: out });
   } catch (e) {
-    res.status(502).json({ error: `proxy error: ${e?.message || e}` });
+    return json(502, { error: `proxy error: ${e?.message || e}` });
   }
 }
