@@ -222,23 +222,30 @@ export default function App() {
   }
 
   // ── Always-listening (auto) ─────────────────────────────────────────────────
+  // Half-duplex: only one segment is ever in flight (the loop doesn't capture
+  // the next one until this fully resolves), but translate+speak can still take
+  // a few seconds — show a "…" bubble the instant we hear something so there's
+  // visible feedback before the text (and the TTS) actually lands.
   async function handleAutoSegment(clip: RecordedClip) {
     setAutoPhase('translating');
+    const pendingId = addPendingUtterance();
     try {
       const outcome = await translateAudio(settings, clip, 'auto');
       applyOutcome(outcome);
       const res = outcome.result;
       if (!res.de && !res.en) {
+        dropPendingUtterance(pendingId);
         showInfo(COULDNT); // heard speech but couldn't translate it
         return;
       }
-      const u = addUtterance(res, 'de');
+      const u = resolvePendingUtterance(pendingId, res, 'de');
       if (u && settings.autoSpeak) {
         setAutoPhase('speaking');
         if (u.speaker === 'de') await speakAsync(u.en, 'en', settings);
         else await speakAsync(u.de, 'de', settings);
       }
     } catch (e) {
+      dropPendingUtterance(pendingId);
       handleTranslateError(e);
       if (/No API key/i.test(errMsg(e))) update({ conversationMode: 'tap' }); // stop spamming failures
     } finally {
