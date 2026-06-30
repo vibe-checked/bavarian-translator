@@ -169,6 +169,7 @@ export function SettingsSheet(props: Props) {
           <Section title="Conversation">
             <ToggleRow
               label="Speak translations automatically"
+              subtitle="Tap and Auto mode only — Live never speaks, to avoid it hearing itself."
               value={settings.autoSpeak}
               onValueChange={(v) => update({ autoSpeak: v })}
             />
@@ -425,16 +426,21 @@ function ModelRow({
 
 function ToggleRow({
   label,
+  subtitle,
   value,
   onValueChange,
 }: {
   label: string;
+  subtitle?: string;
   value: boolean;
   onValueChange: (v: boolean) => void;
 }) {
   return (
-    <View style={styles.row}>
-      <Text style={styles.rowLabel}>{label}</Text>
+    <View style={[styles.row, subtitle ? styles.rowAlignTop : null]}>
+      <View style={styles.rowLabelCol}>
+        <Text style={styles.rowLabel}>{label}</Text>
+        {subtitle ? <Text style={styles.rowSubtitle}>{subtitle}</Text> : null}
+      </View>
       <Switch value={value} onValueChange={onValueChange} />
     </View>
   );
@@ -556,7 +562,10 @@ const styles = StyleSheet.create({
   },
   modelRight: { flexDirection: 'row', alignItems: 'center', gap: 8 },
   row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  rowLabel: { fontSize: 15, color: '#222', flexShrink: 1, paddingRight: 12 },
+  rowAlignTop: { alignItems: 'flex-start' },
+  rowLabelCol: { flexShrink: 1, paddingRight: 12 },
+  rowLabel: { fontSize: 15, color: '#222' },
+  rowSubtitle: { fontSize: 12, color: '#888', marginTop: 2, lineHeight: 16 },
   chips: { flexDirection: 'row', gap: 8, flexWrap: 'wrap' },
   chip: {
     paddingHorizontal: 14,
