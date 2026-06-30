@@ -8,10 +8,12 @@ import {
   retryAfterSeconds,
   isLikelyNonSpeech,
 } from './prompt';
+import { proxyUrl, PROXY_HEADERS } from './proxy';
 
 // Groq does speech in two steps: Whisper transcription, then an LLM translates.
-const TRANSCRIBE_URL = 'https://api.groq.com/openai/v1/audio/transcriptions';
-const CHAT_URL = 'https://api.groq.com/openai/v1/chat/completions';
+// Both calls go through our key proxy (keys are injected server-side).
+const TRANSCRIBE_URL = proxyUrl('groq/transcribe');
+const CHAT_URL = proxyUrl('groq/chat');
 const TRANSCRIBE_MODEL = 'whisper-large-v3'; // full model — more accurate on dialect than turbo
 
 async function transcribe(input: TranslateInput): Promise<string> {
@@ -35,7 +37,7 @@ async function transcribe(input: TranslateInput): Promise<string> {
 
   const res = await fetch(TRANSCRIBE_URL, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${input.apiKey}` },
+    headers: { ...PROXY_HEADERS },
     body: form,
     signal: input.signal,
   });
@@ -58,7 +60,7 @@ async function translate(input: TranslateInput): Promise<TranslateResult> {
 
   const res = await fetch(CHAT_URL, {
     method: 'POST',
-    headers: { Authorization: `Bearer ${input.apiKey}`, 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...PROXY_HEADERS },
     body: JSON.stringify({
       model: input.model,
       temperature: 0.2,

@@ -8,7 +8,7 @@ import { useSettings } from './src/hooks/useSettings';
 import { useRecorder, type RecordedClip } from './src/hooks/useRecorder';
 import { useAutoListener } from './src/hooks/useAutoListener';
 import { useKeepScreenAwake } from './src/hooks/useKeepScreenAwake';
-import { translateAudio, selectedKey, type TranslateOutcome } from './src/services/providers';
+import { translateAudio, type TranslateOutcome } from './src/services/providers';
 import { speak, speakAsync, stopSpeaking, loadVoices, type VoiceInfo } from './src/services/tts';
 import { Pane } from './src/components/Pane';
 import { SettingsSheet } from './src/components/SettingsSheet';
@@ -253,10 +253,6 @@ export default function App() {
 
   async function setMode(mode: 'tap' | 'auto' | 'live') {
     if (mode === settings.conversationMode) return;
-    if (mode !== 'tap' && !selectedKey(settings)) {
-      showError('Add an API key first (⚙︎ → Translation engine) to use hands-free modes.');
-      return;
-    }
     stopSpeaking();
     if (recorder.isRecording) {
       try {

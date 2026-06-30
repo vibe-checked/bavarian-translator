@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import {
-  Linking,
   Modal,
   Pressable,
   ScrollView,
@@ -20,7 +19,6 @@ import {
   cooldownUntil,
   cooldownKey,
   firstAvailable,
-  type Tier,
   type TranslationProvider,
   type ModelOption,
 } from '../services/providers';
@@ -98,12 +96,8 @@ export function SettingsSheet(props: Props) {
           <Section title="Translation engine">
             <Text style={styles.help}>
               Choose which AI transcribes and translates (this drives the Bavarian understanding).
-              Each engine uses its own API key, saved on this device.
-            </Text>
-            <Text style={styles.help}>
-              <Text style={{ fontWeight: '800', color: '#0A7A2F' }}>FREE</Text> = free within daily
-              limits, no card.  <Text style={{ fontWeight: '800', color: '#0059C9' }}>FREE TIER</Text>{' '}
-              = free allowance on a paid platform (best models / heavy use cost credits).
+              If one is busy, the app automatically falls back to another, so translation keeps
+              working. The score is my estimate of dialect quality (0–100).
             </Text>
             {PROVIDERS.map((p) => (
               <ProviderRow
@@ -238,36 +232,6 @@ export function SettingsSheet(props: Props) {
             </Text>
           </Section>
 
-          {/* ElevenLabs */}
-          <Section title="ElevenLabs voice (optional, paid)">
-            <Text style={styles.help}>
-              For a more natural — or cloned Bavarian — German voice. Leave off to use the free
-              built-in voice.
-            </Text>
-            <ToggleRow
-              label="Use ElevenLabs for German"
-              value={settings.useElevenLabs}
-              onValueChange={(v) => update({ useElevenLabs: v })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="ElevenLabs API key"
-              autoCapitalize="none"
-              autoCorrect={false}
-              secureTextEntry
-              value={settings.elevenLabsApiKey}
-              onChangeText={(t) => update({ elevenLabsApiKey: t.trim() })}
-            />
-            <TextInput
-              style={styles.input}
-              placeholder="ElevenLabs voice ID (e.g. a Bavarian voice)"
-              autoCapitalize="none"
-              autoCorrect={false}
-              value={settings.elevenLabsVoiceId}
-              onChangeText={(t) => update({ elevenLabsVoiceId: t.trim() })}
-            />
-          </Section>
-
         </ScrollView>
       </View>
     </Modal>
@@ -300,12 +264,6 @@ function ScoreGauge({ score }: { score: number }) {
       <Text style={[styles.gaugeNum, { color: tone }]}>{score}</Text>
     </View>
   );
-}
-
-function TierBadge({ tier }: { tier: Tier }) {
-  const label = tier === 'free' ? 'FREE' : tier === 'freemium' ? 'FREE TIER' : 'PAID';
-  const tone = tier === 'paid' ? styles.badgePaid : tier === 'freemium' ? styles.badgeFreemium : styles.badgeFree;
-  return <Text style={[styles.badge, tone]}>{label}</Text>;
 }
 
 function ProviderRow({
@@ -343,7 +301,6 @@ function ProviderRow({
       <View style={styles.providerRight}>
         {nowUsing ? <Text style={styles.nowUsing}>● using</Text> : null}
         {cooled ? <Text style={styles.cooldownTag}>⏳ {fmtRemaining(remainingMs)} · tap to retry</Text> : null}
-        <TierBadge tier={provider.tier} />
         <ScoreGauge score={Math.max(...provider.models.map((m) => m.score))} />
         {active ? <Text style={styles.check}>✓</Text> : null}
       </View>
@@ -362,13 +319,10 @@ function EngineConfig({
 }) {
   const provider = getProvider(settings.engineId);
   const curModel = settings.engineModels[settings.engineId] || provider.defaultModel;
-  const curKey = settings.engineKeys[settings.engineId] ?? '';
   const isPreset = provider.models.some((m) => m.id === curModel);
 
   const setModel = (id: string) =>
     update({ engineModels: { ...settings.engineModels, [settings.engineId]: id } });
-  const setKey = (t: string) =>
-    update({ engineKeys: { ...settings.engineKeys, [settings.engineId]: t.trim() } });
   const clearCooldownAndPick = (id: string) => {
     update((prev) => {
       const next = { ...prev.cooldowns };
@@ -395,8 +349,7 @@ function EngineConfig({
       ) : null}
       <Text style={styles.subhead}>Model · {provider.label}</Text>
       <Text style={styles.help}>
-        Score = my estimate of quality for Bavarian (0–100), comparable across providers. Higher
-        quality usually means a smaller free quota.
+        Score = my estimate of quality for Bavarian (0–100), comparable across providers.
       </Text>
       {provider.models.map((m) => (
         <ModelRow
@@ -420,24 +373,6 @@ function EngineConfig({
           onChangeText={(t) => setModel(t.trim())}
         />
       ) : null}
-
-      <Text style={styles.subhead}>API key · {provider.label}</Text>
-      <TextInput
-        style={styles.input}
-        placeholder={`Paste your ${provider.label} API key`}
-        autoCapitalize="none"
-        autoCorrect={false}
-        secureTextEntry
-        value={curKey}
-        onChangeText={setKey}
-      />
-      <Text style={styles.help}>{provider.keyHint}</Text>
-      <Pressable onPress={() => Linking.openURL(provider.apiKeyUrl)}>
-        <Text style={styles.link}>Get a key → {provider.apiKeyUrl}</Text>
-      </Pressable>
-      <Text style={styles.keyState}>
-        {curKey ? '✓ Key saved on this device' : '⚠ No key yet — this engine won’t work until you add one'}
-      </Text>
     </View>
   );
 }
@@ -578,17 +513,6 @@ const styles = StyleSheet.create({
   link: { color: '#007AFF', fontSize: 13, fontWeight: '600' },
   engineConfig: { gap: 10, marginTop: 4 },
   providerRight: { flexDirection: 'row', alignItems: 'center', gap: 8, flexShrink: 0 },
-  badge: {
-    fontSize: 10,
-    fontWeight: '800',
-    paddingHorizontal: 6,
-    paddingVertical: 2,
-    borderRadius: 6,
-    overflow: 'hidden',
-  },
-  badgeFree: { color: '#0A7A2F', backgroundColor: '#D6F5DF' },
-  badgeFreemium: { color: '#0059C9', backgroundColor: '#DCEBFF' },
-  badgePaid: { color: '#8A4B00', backgroundColor: '#FFE2B0' },
   topScore: { fontSize: 12, fontWeight: '800', color: '#888' },
   gaugeWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   gaugeTrack: {

@@ -27,8 +27,6 @@ export interface Settings {
   engineId: string;
   /** Per-provider chosen model id (empty → that provider's default). */
   engineModels: Record<string, string>;
-  /** Per-provider API key, stored on this device. */
-  engineKeys: Record<string, string>;
   /**
    * Rate-limit cooldowns. Maps "engineId:modelId" → epoch ms until which that
    * model is parked (because it hit a quota/429). While parked it's skipped by
@@ -74,13 +72,6 @@ export interface Settings {
    * entirely — no English→German bubble, no spoken-back translation.
    */
   germanOnly: boolean;
-
-  /** Optional ElevenLabs key for a more natural / Bavarian German voice. */
-  elevenLabsApiKey: string;
-  /** ElevenLabs voice id to use for German (e.g. a cloned Bavarian voice). */
-  elevenLabsVoiceId: string;
-  /** Route German speech through ElevenLabs instead of expo-speech. */
-  useElevenLabs: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -88,11 +79,6 @@ export const DEFAULT_SETTINGS: Settings = {
   // (Pro is paid). Switch to Groq in Settings for far higher quota (weaker dialect).
   engineId: 'gemini',
   engineModels: {},
-  engineKeys: {
-    gemini: process.env.EXPO_PUBLIC_GEMINI_API_KEY ?? '',
-    groq: process.env.EXPO_PUBLIC_GROQ_API_KEY ?? '',
-    mistral: process.env.EXPO_PUBLIC_MISTRAL_API_KEY ?? '',
-  },
   cooldowns: {},
 
   autoSpeak: true,
@@ -108,8 +94,4 @@ export const DEFAULT_SETTINGS: Settings = {
   autoSpeechThresholdDb: -35,
   backgroundListening: false,
   germanOnly: false,
-
-  elevenLabsApiKey: process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY ?? '',
-  elevenLabsVoiceId: process.env.EXPO_PUBLIC_ELEVENLABS_VOICE_ID ?? '',
-  useElevenLabs: false,
 };

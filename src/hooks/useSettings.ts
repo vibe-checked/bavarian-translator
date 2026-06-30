@@ -24,13 +24,14 @@ export function useSettings(): SettingsStore {
         const raw = await AsyncStorage.getItem(KEY);
         if (alive && raw) {
           const parsed = JSON.parse(raw);
-          // Deep-merge the per-engine maps so env-seeded keys/models added after the
-          // user's settings were first saved still appear (a shallow merge would let
-          // an old saved engineKeys object hide a newly-added key like OpenRouter).
+          // Deep-merge the per-engine model map so a model default added after the
+          // user's settings were first saved still appears. Drop any legacy
+          // engineKeys/elevenLabs* fields from old saves — keys now live in the proxy.
+          const { engineKeys: _ek, elevenLabsApiKey: _ek2, elevenLabsVoiceId: _ev, useElevenLabs: _ue, ...rest } =
+            parsed;
           setSettings({
             ...DEFAULT_SETTINGS,
-            ...parsed,
-            engineKeys: { ...DEFAULT_SETTINGS.engineKeys, ...(parsed.engineKeys ?? {}) },
+            ...rest,
             engineModels: { ...DEFAULT_SETTINGS.engineModels, ...(parsed.engineModels ?? {}) },
           });
         }

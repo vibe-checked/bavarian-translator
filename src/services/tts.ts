@@ -1,6 +1,4 @@
 import * as Speech from 'expo-speech';
-import { createAudioPlayer, type AudioPlayer } from 'expo-audio';
-import { File, Paths } from 'expo-file-system';
 import type { Lang, Settings } from '../types';
 import { ensurePlayAndRecord } from './audioSession';
 
@@ -17,20 +15,11 @@ async function preparePlayback() {
 /** Stop any current speech / playback immediately. */
 export function stopSpeaking() {
   Speech.stop();
-  if (elPlayer) {
-    try {
-      elPlayer.remove();
-    } catch {
-      /* ignore */
-    }
-    elPlayer = null;
-  }
 }
 
 /**
  * Speak text in the given language. German honours the slow / voice settings;
- * English plays at the normal English rate. Routes German through ElevenLabs
- * when the user has enabled it (for a more natural / Bavarian voice).
+ * English plays at the normal English rate.
  */
 export async function speak(
   text: string,
@@ -43,21 +32,6 @@ export async function speak(
 
   stopSpeaking();
   await preparePlayback();
-
-  if (
-    lang === 'de' &&
-    settings.useElevenLabs &&
-    settings.elevenLabsApiKey &&
-    settings.elevenLabsVoiceId
-  ) {
-    try {
-      await speakWithElevenLabs(clean, settings, opts);
-      return;
-    } catch (e: any) {
-      // Fall back to the built-in voice if ElevenLabs fails for any reason.
-      opts.onError?.(`ElevenLabs failed (${e?.message ?? e}); using built-in voice.`);
-    }
-  }
 
   const rate =
     lang === 'de'
@@ -101,52 +75,6 @@ export function speakAsync(text: string, lang: Lang, settings: Settings): Promis
     const timer = setTimeout(finish, Math.min(30000, 2500 + clean.length * perChar));
     speak(clean, lang, settings, { onDone: finish, onError: finish });
   });
-}
-
-// ── ElevenLabs (optional, paid) ──────────────────────────────────────────────
-// Untested without a key. Enable via Settings → "Use ElevenLabs for German".
-
-let elPlayer: AudioPlayer | null = null;
-
-async function speakWithElevenLabs(text: string, settings: Settings, opts: SpeakOptions) {
-  const url = `https://api.elevenlabs.io/v1/text-to-speech/${settings.elevenLabsVoiceId}`;
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'xi-api-key': settings.elevenLabsApiKey,
-      'Content-Type': 'application/json',
-      Accept: 'audio/mpeg',
-    },
-    body: JSON.stringify({
-      text,
-      model_id: 'eleven_multilingual_v2',
-      // Slow it down for elderly listeners when "slow German" is on.
-      voice_settings: {
-        stability: 0.5,
-        similarity_boost: 0.8,
-        speed: settings.germanSlow ? 0.7 : 1.0,
-      },
-    }),
-  });
-  if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-  const buf = await res.arrayBuffer();
-  const file = new File(Paths.cache, 'el-tts.mp3');
-  try {
-    if (file.exists) file.delete();
-  } catch {
-    /* ignore */
-  }
-  file.write(new Uint8Array(buf));
-
-  elPlayer = createAudioPlayer(file.uri);
-  elPlayer.addListener('playbackStatusUpdate', (status) => {
-    if (status.didJustFinish) {
-      opts.onDone?.();
-      stopSpeaking();
-    }
-  });
-  elPlayer.play();
 }
 
 // ── Voice discovery ──────────────────────────────────────────────────────────

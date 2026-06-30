@@ -34,12 +34,6 @@ export function selectedModel(settings: Settings): string {
   return settings.engineModels[provider.id]?.trim() || provider.defaultModel;
 }
 
-/** The API key for the active engine. */
-export function selectedKey(settings: Settings): string {
-  const provider = getProvider(settings.engineId);
-  return (settings.engineKeys[provider.id] ?? '').trim();
-}
-
 // ── Cooldown registry ──────────────────────────────────────────────────────
 export function cooldownKey(engineId: string, model: string): string {
   return `${engineId}:${model}`;
@@ -73,21 +67,20 @@ function scoreOf(provider: TranslationProvider, modelId: string): number {
  *   1. the user's preferred engine — its selected model, then its other models
  *      (Gemini's two models have SEPARATE daily quotas, so this genuinely helps);
  *   2. every other engine's selected/default model, by quality score.
- * Only candidates whose engine has an API key are included.
+ * Keys live server-side in the proxy now, so every engine is always a candidate.
  */
 function candidatesFor(settings: Settings): Candidate[] {
   const out: Candidate[] = [];
   const seen = new Set<string>();
   const add = (provider: TranslationProvider, modelId: string) => {
-    const apiKey = (settings.engineKeys[provider.id] ?? '').trim();
-    if (!apiKey || !modelId) return;
+    if (!modelId) return;
     const ck = cooldownKey(provider.id, modelId);
     if (seen.has(ck)) return;
     seen.add(ck);
     out.push({
       engineId: provider.id,
       model: modelId,
-      apiKey,
+      apiKey: '', // proxied — providers no longer use a client key
       engineLabel: provider.label,
       modelLabel: modelLabelOf(provider, modelId),
       score: scoreOf(provider, modelId),
@@ -208,10 +201,8 @@ export async function translateAudio(
 
   const all = candidatesFor(settings);
   if (all.length === 0) {
-    const provider = getProvider(settings.engineId);
-    throw new Error(
-      `No API key for ${provider.label}. Open Settings (⚙︎) → Translation engine and paste a key from ${provider.apiKeyUrl}.`,
-    );
+    // Shouldn't happen (every engine is always a candidate now), but stay safe.
+    throw new Error('No translation engine is available right now. Please try again.');
   }
 
   const preferred: EnginePick = {

@@ -42,6 +42,7 @@ yarn-error.*
 
 # local secrets (explicit)
 .env
+proxy/.app-token.txt
 
 # Local dialect re-test fixtures (audio clips + script)
 .dialect-retest/
