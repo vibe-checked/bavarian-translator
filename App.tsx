@@ -76,6 +76,54 @@ export default function App() {
     return u;
   }
 
+  // ── Live-mode placeholders ───────────────────────────────────────────────
+  // The instant a chunk is captured we drop in a "…" bubble (shown in both
+  // panes — we don't know the speaker yet) so the user sees "heard you,
+  // translating" right away. It's swapped for the real text in place once the
+  // response lands, so position/order never changes.
+  function addPendingUtterance(): string {
+    const id = newId();
+    const placeholder: Utterance = {
+      id,
+      speaker: 'de', // unused while pending — Pane renders the placeholder before reading it
+      de: '',
+      en: '',
+      bavarian: false,
+      createdAt: Date.now(),
+      pending: true,
+    };
+    setUtterances((prev) => [...prev, placeholder]);
+    return id;
+  }
+
+  function resolvePendingUtterance(
+    id: string,
+    res: { detected: Lang | 'other'; bavarian: boolean; de: string; en: string },
+    fallback: Lang,
+  ): Utterance | null {
+    const speaker: Lang = res.detected === 'en' ? 'en' : res.detected === 'de' ? 'de' : fallback;
+    if (settings.germanOnly && speaker === 'en') {
+      dropPendingUtterance(id);
+      return null;
+    }
+    const resolved: Utterance = {
+      id,
+      speaker,
+      de: res.de,
+      en: res.en,
+      bavarian: res.bavarian,
+      createdAt: Date.now(),
+      pending: false,
+    };
+    setUtterances((prev) => prev.map((u) => (u.id === id ? resolved : u)));
+    clearNotice();
+    return resolved;
+  }
+
+  function dropPendingUtterance(id: string) {
+    setUtterances((prev) => prev.filter((u) => u.id !== id));
+  }
+
   // One place for all on-screen toasts. Errors stay until dismissed; soft and
   // success notes clear themselves so they never linger in always-listening modes.
   function showNotice(text: string, kind: NoticeKind, autoMs?: number) {
@@ -202,12 +250,23 @@ export default function App() {
   // Short chunks arrive fast; a single worker translates them in order and appends
   // text immediately. onSegment resolves at once so the mic never stops to wait
   // (that's what makes it "live"). No auto-TTS here — it would echo into the mic.
-  const liveQueue = useRef<RecordedClip[]>([]);
+  // Each queued clip gets a "…" placeholder bubble the moment it's captured, so
+  // the user sees "heard you" right away even if an earlier chunk is still
+  // translating; it's swapped for the real text in place when its turn resolves.
+  interface LiveQueueItem {
+    id: string;
+    clip: RecordedClip;
+  }
+  const liveQueue = useRef<LiveQueueItem[]>([]);
   const liveDraining = useRef(false);
 
   function enqueueLive(clip: RecordedClip): Promise<void> {
-    if (liveQueue.current.length > 8) liveQueue.current.shift(); // bound the backlog
-    liveQueue.current.push(clip);
+    if (liveQueue.current.length > 8) {
+      const dropped = liveQueue.current.shift(); // bound the backlog
+      if (dropped) dropPendingUtterance(dropped.id);
+    }
+    const id = addPendingUtterance();
+    liveQueue.current.push({ id, clip });
     if (!liveDraining.current) {
       liveDraining.current = true;
       void drainLive();
@@ -218,17 +277,22 @@ export default function App() {
   async function drainLive() {
     try {
       while (liveQueue.current.length) {
-        const clip = liveQueue.current.shift()!;
+        const { id, clip } = liveQueue.current.shift()!;
         try {
           const outcome = await translateAudio(settings, clip, 'auto', { timeoutMs: 12000 });
           applyOutcome(outcome);
           const res = outcome.result;
-          if (res.de || res.en) addUtterance(res, 'de'); // single worker ⇒ in order
-          else showInfo(COULDNT); // heard speech but couldn't translate it
+          if (res.de || res.en) resolvePendingUtterance(id, res, 'de'); // single worker ⇒ in order
+          else {
+            dropPendingUtterance(id);
+            showInfo(COULDNT); // heard speech but couldn't translate it
+          }
         } catch (e) {
-          // A throw here means every engine failed — drop the backlog so we don't
-          // replay the same failure on each queued chunk.
+          // A throw here means every engine failed — drop the backlog (and its
+          // still-pending bubbles) so we don't replay the same failure per chunk.
+          dropPendingUtterance(id);
           handleTranslateError(e);
+          liveQueue.current.forEach((q) => dropPendingUtterance(q.id));
           liveQueue.current = [];
           if (/No API key/i.test(errMsg(e))) update({ conversationMode: 'tap' });
           break;
@@ -261,6 +325,7 @@ export default function App() {
         /* ignore */
       }
     }
+    liveQueue.current.forEach((q) => dropPendingUtterance(q.id)); // drop any still-waiting "…" bubbles
     liveQueue.current = [];
     setActivePane(null);
     setBusyPane(null);

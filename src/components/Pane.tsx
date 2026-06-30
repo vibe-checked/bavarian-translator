@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -54,6 +54,18 @@ function placeholder(lang: Lang, mode: 'tap' | 'auto' | 'live'): string {
   return lang === 'de'
     ? 'Drück auf das Mikrofon und sprich. Übersetzungen erscheinen hier.'
     : 'Tap the mic and speak. Translations appear here.';
+}
+
+const DOT_FRAMES = ['.', '..', '...', '....'];
+
+/** Looping "." → ".." → "..." → "...." — shown while a Live-mode chunk is translating. */
+function PendingDots() {
+  const [frame, setFrame] = useState(0);
+  useEffect(() => {
+    const t = setInterval(() => setFrame((f) => (f + 1) % DOT_FRAMES.length), 380);
+    return () => clearInterval(t);
+  }, []);
+  return <Text style={styles.pendingDots}>{DOT_FRAMES[frame]}</Text>;
 }
 
 export function Pane(props: PaneProps) {
@@ -117,6 +129,14 @@ export function Pane(props: PaneProps) {
           <Text style={styles.empty}>{placeholder(lang, props.mode ?? 'tap')}</Text>
         ) : (
           utterances.map((u) => {
+            if (u.pending) {
+              // Shown identically in both panes — we don't know the speaker yet.
+              return (
+                <View key={u.id} style={styles.bubblePending}>
+                  <PendingDots />
+                </View>
+              );
+            }
             const mine = u.speaker === lang;
             const text = lang === 'de' ? u.de : u.en;
             if (!text) return null;
@@ -187,6 +207,18 @@ const styles = StyleSheet.create({
   bubbleTheirs: { alignSelf: 'flex-start', backgroundColor: '#FFFFFF', borderBottomLeftRadius: 4 },
   bubbleText: { color: '#111' },
   bubbleTextMine: { color: '#fff' },
+  // Live mode: shown while a chunk is heard but not yet translated — centered,
+  // neutral (speaker isn't known yet), same in both panes.
+  bubblePending: {
+    alignSelf: 'center',
+    borderRadius: 16,
+    backgroundColor: '#ECECEC',
+    paddingHorizontal: 22,
+    paddingVertical: 10,
+    minWidth: 56,
+    alignItems: 'center',
+  },
+  pendingDots: { fontSize: 20, fontWeight: '800', color: '#9aa0a6', letterSpacing: 2 },
   tag: {
     position: 'absolute',
     top: 6,

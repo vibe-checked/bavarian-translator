@@ -12,6 +12,8 @@ export interface Utterance {
   /** True when the German speaker used Bavarian dialect. */
   bavarian: boolean;
   createdAt: number;
+  /** Live mode: still waiting on the translation — render as a "…" placeholder. */
+  pending?: boolean;
 }
 
 /** Result of sending an audio clip to a translation engine. */
