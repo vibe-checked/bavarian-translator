@@ -1,7 +1,7 @@
 import type { TranslateResult } from '../../types';
 import type { TranslateInput, TranslationProvider } from './types';
 import { audioInstruction, parseResult, httpError, retryAfterSeconds, isLikelyNonSpeech } from './prompt';
-import { proxyUrl, PROXY_HEADERS } from './proxy';
+import { endpointFor } from './proxy';
 
 // Gemini uses its own (uppercase) schema dialect.
 const GEMINI_SCHEMA = {
@@ -35,9 +35,16 @@ async function translate(input: TranslateInput): Promise<TranslateResult> {
 
   let res: Response;
   try {
-    res = await fetch(proxyUrl('gemini', { model: input.model }), {
+    const ep = endpointFor({
+      provider: 'gemini',
+      proxyRoute: 'gemini',
+      proxyParams: { model: input.model },
+      directUrl: `https://generativelanguage.googleapis.com/v1beta/models/${input.model}:generateContent`,
+      directKeyInUrl: true,
+    });
+    res = await fetch(ep.url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...PROXY_HEADERS },
+      headers: { 'Content-Type': 'application/json', ...ep.headers },
       body: JSON.stringify(body),
       signal: input.signal,
     });

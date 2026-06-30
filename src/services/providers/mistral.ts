@@ -8,12 +8,20 @@ import {
   retryAfterSeconds,
   isLikelyNonSpeech,
 } from './prompt';
-import { proxyUrl, PROXY_HEADERS } from './proxy';
+import { endpointFor } from './proxy';
 
 // Mistral does speech in two steps: Voxtral transcription, then an LLM translates.
-// Both calls go through our key proxy (keys are injected server-side).
-const TRANSCRIBE_URL = proxyUrl('mistral/transcribe');
-const CHAT_URL = proxyUrl('mistral/chat');
+// Each call resolves to the proxy or the provider directly (USE_PROXY flag).
+const TRANSCRIBE = endpointFor({
+  provider: 'mistral',
+  proxyRoute: 'mistral/transcribe',
+  directUrl: 'https://api.mistral.ai/v1/audio/transcriptions',
+});
+const CHAT = endpointFor({
+  provider: 'mistral',
+  proxyRoute: 'mistral/chat',
+  directUrl: 'https://api.mistral.ai/v1/chat/completions',
+});
 const TRANSCRIBE_MODEL = 'voxtral-mini-latest';
 
 async function transcribe(input: TranslateInput): Promise<string> {
@@ -27,9 +35,9 @@ async function transcribe(input: TranslateInput): Promise<string> {
     form.append('language', input.expected);
   }
 
-  const res = await fetch(TRANSCRIBE_URL, {
+  const res = await fetch(TRANSCRIBE.url, {
     method: 'POST',
-    headers: { ...PROXY_HEADERS },
+    headers: { ...TRANSCRIBE.headers },
     body: form,
     signal: input.signal,
   });
@@ -51,9 +59,9 @@ async function translate(input: TranslateInput): Promise<TranslateResult> {
   const transcript = await transcribe(input);
   if (isLikelyNonSpeech(transcript)) return { detected: 'other', bavarian: false, de: '', en: '' };
 
-  const res = await fetch(CHAT_URL, {
+  const res = await fetch(CHAT.url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...PROXY_HEADERS },
+    headers: { 'Content-Type': 'application/json', ...CHAT.headers },
     body: JSON.stringify({
       model: input.model,
       temperature: 0.2,

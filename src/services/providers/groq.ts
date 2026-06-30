@@ -8,12 +8,20 @@ import {
   retryAfterSeconds,
   isLikelyNonSpeech,
 } from './prompt';
-import { proxyUrl, PROXY_HEADERS } from './proxy';
+import { endpointFor } from './proxy';
 
 // Groq does speech in two steps: Whisper transcription, then an LLM translates.
-// Both calls go through our key proxy (keys are injected server-side).
-const TRANSCRIBE_URL = proxyUrl('groq/transcribe');
-const CHAT_URL = proxyUrl('groq/chat');
+// Each call resolves to the proxy or the provider directly (USE_PROXY flag).
+const TRANSCRIBE = endpointFor({
+  provider: 'groq',
+  proxyRoute: 'groq/transcribe',
+  directUrl: 'https://api.groq.com/openai/v1/audio/transcriptions',
+});
+const CHAT = endpointFor({
+  provider: 'groq',
+  proxyRoute: 'groq/chat',
+  directUrl: 'https://api.groq.com/openai/v1/chat/completions',
+});
 const TRANSCRIBE_MODEL = 'whisper-large-v3'; // full model — more accurate on dialect than turbo
 
 async function transcribe(input: TranslateInput): Promise<string> {
@@ -35,9 +43,9 @@ async function transcribe(input: TranslateInput): Promise<string> {
     form.append('prompt', 'Gesprochenes Bairisch bzw. Hochdeutsch.');
   }
 
-  const res = await fetch(TRANSCRIBE_URL, {
+  const res = await fetch(TRANSCRIBE.url, {
     method: 'POST',
-    headers: { ...PROXY_HEADERS },
+    headers: { ...TRANSCRIBE.headers },
     body: form,
     signal: input.signal,
   });
@@ -58,9 +66,9 @@ async function translate(input: TranslateInput): Promise<TranslateResult> {
   const transcript = await transcribe(input);
   if (isLikelyNonSpeech(transcript)) return { detected: 'other', bavarian: false, de: '', en: '' };
 
-  const res = await fetch(CHAT_URL, {
+  const res = await fetch(CHAT.url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...PROXY_HEADERS },
+    headers: { 'Content-Type': 'application/json', ...CHAT.headers },
     body: JSON.stringify({
       model: input.model,
       temperature: 0.2,
