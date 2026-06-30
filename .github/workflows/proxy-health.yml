@@ -1,0 +1,29 @@
+name: proxy-health
+
+# Uptime/health check for the key-proxy. Hits the proxy's /api/ping every ~10
+# minutes; if it ever returns non-200 (bad deploy, Vercel outage, domain/key
+# issue) the run FAILS and GitHub emails you. Free on this public repo.
+#
+# Note: this is NOT a keep-warm — the proxy runs on Vercel Edge (V8 isolates),
+# which has no meaningful cold start, so there's nothing to warm. This is purely
+# a breakage alert. GitHub's scheduled runs are best-effort (may be delayed) and
+# auto-disable after 60 days of no repo activity.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *' # every 10 minutes
+  workflow_dispatch: {} # allow manual runs from the Actions tab
+
+permissions:
+  contents: read
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check proxy /api/ping is healthy
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' --max-time 20 \
+            https://bavarian-api.vibecode.review/api/ping)
+          echo "proxy health → HTTP $code"
+          test "$code" = "200"
