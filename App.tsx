@@ -40,6 +40,7 @@ export default function App() {
   const [activePane, setActivePane] = useState<Lang | null>(null); // pane currently recording (tap mode)
   const [busyPane, setBusyPane] = useState<Lang | null>(null); // pane currently translating (tap mode)
   const [autoPhase, setAutoPhase] = useState<AutoPhase>(null);
+  const [replaying, setReplaying] = useState(false); // suspends Auto/Live listening during a manual bubble replay
   const [notice, setNotice] = useState<Notice | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [voices, setVoices] = useState<{ german: VoiceInfo[]; english: VoiceInfo[] }>({
@@ -175,6 +176,29 @@ export default function App() {
     const cd = e?.cooldowns;
     if (cd && Object.keys(cd).length) update((prev) => ({ cooldowns: { ...prev.cooldowns, ...cd } }));
     showError(errMsg(e));
+  }
+
+  // Tap a bubble to hear it again. In Tap mode the mic is idle between taps, so
+  // a plain fire-and-forget speak() is fine. In Auto/Live the mic is ALWAYS
+  // listening — without this, the replay's own speaker output gets picked back
+  // up by the live mic and re-translated as a brand-new (duplicate) utterance.
+  // So there we suspend listening for the duration, same as the app's own
+  // auto-speak-after-translate flow already does.
+  async function replayUtterance(text: string, lang: Lang) {
+    if (!listening) {
+      speak(text, lang, settings, { onError: showError });
+      return;
+    }
+    setReplaying(true);
+    if (recorder.isRecording) {
+      try {
+        await recorder.stop();
+      } catch {
+        /* ignore */
+      }
+    }
+    await speakAsync(text, lang, settings);
+    setReplaying(false);
   }
 
   const COULDNT = "🔇 Nicht verstanden · Didn't catch that";
@@ -333,7 +357,7 @@ export default function App() {
 
   const { level } = useAutoListener({
     recorder,
-    enabled: ready && listening,
+    enabled: ready && listening && !replaying,
     live: liveMode,
     thresholdDb: settings.autoSpeechThresholdDb,
     onSegment: liveMode ? enqueueLive : handleAutoSegment,
@@ -410,7 +434,7 @@ export default function App() {
           showMic={!listening}
           mode={settings.conversationMode}
           onMic={() => handleMic('de')}
-          onReplay={(u) => speak(u.de, 'de', settings, { onError: showError })}
+          onReplay={(u) => replayUtterance(u.de, 'de')}
         />
         </SafeAreaView>
 
@@ -484,7 +508,7 @@ export default function App() {
           showMic={!listening && !settings.germanOnly}
           mode={settings.conversationMode}
           onMic={() => handleMic('en')}
-          onReplay={(u) => speak(u.en, 'en', settings, { onError: showError })}
+          onReplay={(u) => replayUtterance(u.en, 'en')}
         />
         </SafeAreaView>
 
