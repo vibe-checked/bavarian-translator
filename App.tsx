@@ -1,7 +1,12 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { LayoutAnimation, Pressable, StyleSheet, Text, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+
+// Smooth, fast collapse/swap for the pending-bubble lifecycle — long enough to
+// read as intentional, short enough not to feel laggy on a live transcript.
+// iOS only — this app has no Android build target.
+const BUBBLE_ANIM = { ...LayoutAnimation.Presets.easeInEaseOut, duration: 220 };
 
 import type { Lang, Utterance } from './src/types';
 import { useSettings } from './src/hooks/useSettings';
@@ -115,12 +120,14 @@ export default function App() {
       createdAt: Date.now(),
       pending: false,
     };
+    LayoutAnimation.configureNext(BUBBLE_ANIM); // animate the "…" → real-text swap
     setUtterances((prev) => prev.map((u) => (u.id === id ? resolved : u)));
     clearNotice();
     return resolved;
   }
 
   function dropPendingUtterance(id: string) {
+    LayoutAnimation.configureNext(BUBBLE_ANIM); // animate the collapse instead of snapping
     setUtterances((prev) => prev.filter((u) => u.id !== id));
   }
 
