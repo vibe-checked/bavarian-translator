@@ -17,6 +17,7 @@ import { translateAudio, type TranslateOutcome } from './src/services/providers'
 import { speak, speakAsync, stopSpeaking, loadVoices, type VoiceInfo } from './src/services/tts';
 import { Pane } from './src/components/Pane';
 import { SettingsSheet } from './src/components/SettingsSheet';
+import { ModeHelpSheet } from './src/components/ModeHelpSheet';
 
 const newId = () => `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
 const errMsg = (e: any) => (e?.message ? String(e.message) : String(e));
@@ -43,6 +44,7 @@ export default function App() {
   const [replaying, setReplaying] = useState(false); // suspends Auto/Live listening during a manual bubble replay
   const [notice, setNotice] = useState<Notice | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [modeHelpOpen, setModeHelpOpen] = useState(false);
   const [voices, setVoices] = useState<{ german: VoiceInfo[]; english: VoiceInfo[] }>({
     german: [],
     english: [],
@@ -443,22 +445,32 @@ export default function App() {
             <Text style={styles.iconText}>⚙︎</Text>
           </Pressable>
 
-          <View style={styles.segment}>
-            {(['tap', 'auto', 'live'] as const).map((m) => {
-              const active = settings.conversationMode === m;
-              const label = m === 'tap' ? '👆 Tap' : m === 'auto' ? '🔁 Auto' : '🔴 Live';
-              return (
-                <Pressable
-                  key={m}
-                  style={[styles.segmentBtn, active ? styles.segmentBtnActive : null]}
-                  onPress={() => setMode(m)}
-                >
-                  <Text style={[styles.segmentText, active ? styles.segmentTextActive : null]}>
-                    {label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+          <View style={styles.segmentWrap}>
+            <View style={styles.segment}>
+              {(['tap', 'auto', 'live'] as const).map((m) => {
+                const active = settings.conversationMode === m;
+                const label = m === 'tap' ? '👆 Tap' : m === 'auto' ? '🔁 Auto' : '🔴 Live';
+                return (
+                  <Pressable
+                    key={m}
+                    style={[styles.segmentBtn, active ? styles.segmentBtnActive : null]}
+                    onPress={() => setMode(m)}
+                  >
+                    <Text style={[styles.segmentText, active ? styles.segmentTextActive : null]}>
+                      {label}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <Pressable
+              style={styles.modeHelpBtn}
+              onPress={() => setModeHelpOpen(true)}
+              hitSlop={8}
+              accessibilityLabel="Which mode should I use?"
+            >
+              <Text style={styles.modeHelpText}>?</Text>
+            </Pressable>
           </View>
 
           <Pressable
@@ -542,6 +554,8 @@ export default function App() {
           }
         />
 
+        <ModeHelpSheet visible={modeHelpOpen} onClose={() => setModeHelpOpen(false)} />
+
         {!ready ? <View style={styles.loadingVeil} /> : null}
       </View>
     </SafeAreaProvider>
@@ -615,6 +629,18 @@ const styles = StyleSheet.create({
   segmentBtnActive: { backgroundColor: '#fff' },
   segmentText: { color: '#ccc', fontWeight: '800', fontSize: 13 },
   segmentTextActive: { color: '#111' },
+  segmentWrap: { flexDirection: 'row', alignItems: 'center', gap: 6 },
+  modeHelpBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#333',
+    borderWidth: 1,
+    borderColor: '#555',
+  },
+  modeHelpText: { color: '#ccc', fontSize: 13, fontWeight: '800' },
   statusRow: {
     flexDirection: 'row',
     alignItems: 'center',
