@@ -30,6 +30,14 @@ export interface AutoListenerOptions {
    *  (just enqueue the clip) so listening continues uninterrupted. */
   onSegment: (clip: RecordedClip) => Promise<void>;
   onError?: (message: string) => void;
+  /** Fired the instant real speech is first detected in a capture — before the
+   *  pause/cap that actually ends it — so the caller can show feedback ("heard
+   *  you, translating…") right away instead of waiting for the whole utterance. */
+  onSpeechStart?: () => void;
+  /** Fired if a capture that already triggered onSpeechStart never reaches
+   *  onSegment (e.g. listening was turned off mid-capture) — lets the caller
+   *  clean up whatever onSpeechStart showed. */
+  onSpeechAbandon?: () => void;
 }
 
 /**
@@ -50,6 +58,8 @@ export function useAutoListener(opts: AutoListenerOptions): { level: number } {
   const onSegmentRef = useRef(opts.onSegment);
   const onErrorRef = useRef(opts.onError);
   const recorderRef = useRef(opts.recorder);
+  const onSpeechStartRef = useRef(opts.onSpeechStart);
+  const onSpeechAbandonRef = useRef(opts.onSpeechAbandon);
 
   // Keep latest values available to the long-lived loop without restarting it.
   thresholdRef.current = opts.thresholdDb;
@@ -57,6 +67,8 @@ export function useAutoListener(opts: AutoListenerOptions): { level: number } {
   onSegmentRef.current = opts.onSegment;
   onErrorRef.current = opts.onError;
   recorderRef.current = opts.recorder;
+  onSpeechStartRef.current = opts.onSpeechStart;
+  onSpeechAbandonRef.current = opts.onSpeechAbandon;
 
   useEffect(() => {
     enabledRef.current = opts.enabled;
@@ -72,7 +84,10 @@ export function useAutoListener(opts: AutoListenerOptions): { level: number } {
     try {
       while (enabledRef.current) {
         const clip = await captureUtterance();
-        if (!enabledRef.current) break;
+        if (!enabledRef.current) {
+          if (clip) onSpeechAbandonRef.current?.(); // had real speech, but we're stopping — drop its bubble
+          break;
+        }
         if (!clip) continue; // pure silence — keep listening
         try {
           await onSegmentRef.current(clip);
@@ -126,6 +141,7 @@ export function useAutoListener(opts: AutoListenerOptions): { level: number } {
           timer = setInterval(() => {
             if (done) return;
             if (!enabledRef.current) {
+              if (hasSpeech) onSpeechAbandonRef.current?.(); // started, but we're stopping mid-capture
               void finish(false);
               return;
             }
@@ -138,7 +154,10 @@ export function useAutoListener(opts: AutoListenerOptions): { level: number } {
             if (db > thresholdRef.current) {
               lastVoiceTs = t;
               voiceMs += POLL_MS;
-              if (voiceMs >= cfg.minSpeech) hasSpeech = true;
+              if (voiceMs >= cfg.minSpeech && !hasSpeech) {
+                hasSpeech = true;
+                onSpeechStartRef.current?.(); // rising edge only — fire once per capture
+              }
             }
             const sinceStart = t - startTs;
             const sinceVoice = t - lastVoiceTs;

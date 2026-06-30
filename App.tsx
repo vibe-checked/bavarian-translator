@@ -228,14 +228,21 @@ export default function App() {
     }
   }
 
+  // The "…" bubble for the capture currently in progress. Created the instant
+  // useAutoListener's onSpeechStart fires (loudness crossed the threshold) —
+  // well before the segment finishes — then claimed by enqueueLive/
+  // handleAutoSegment once that capture actually resolves into a clip.
+  const pendingStartIdRef = useRef<string | null>(null);
+
   // ── Always-listening (auto) ─────────────────────────────────────────────────
   // Half-duplex: only one segment is ever in flight (the loop doesn't capture
   // the next one until this fully resolves), but translate+speak can still take
-  // a few seconds — show a "…" bubble the instant we hear something so there's
-  // visible feedback before the text (and the TTS) actually lands.
+  // a few seconds on top of that — the "…" bubble (already showing since
+  // onSpeechStart) stays up the whole time so there's no gap before the text.
   async function handleAutoSegment(clip: RecordedClip) {
     setAutoPhase('translating');
-    const pendingId = addPendingUtterance();
+    const pendingId = pendingStartIdRef.current ?? addPendingUtterance(); // fallback if onSpeechStart was missed
+    pendingStartIdRef.current = null;
     try {
       const outcome = await translateAudio(settings, clip, 'auto');
       applyOutcome(outcome);
@@ -264,9 +271,8 @@ export default function App() {
   // Short chunks arrive fast; a single worker translates them in order and appends
   // text immediately. onSegment resolves at once so the mic never stops to wait
   // (that's what makes it "live"). No auto-TTS here — it would echo into the mic.
-  // Each queued clip gets a "…" placeholder bubble the moment it's captured, so
-  // the user sees "heard you" right away even if an earlier chunk is still
-  // translating; it's swapped for the real text in place when its turn resolves.
+  // Each clip's "…" bubble already exists by the time it gets here (created on
+  // onSpeechStart, well before the capture finished) — claimed below, not created.
   interface LiveQueueItem {
     id: string;
     clip: RecordedClip;
@@ -275,11 +281,12 @@ export default function App() {
   const liveDraining = useRef(false);
 
   function enqueueLive(clip: RecordedClip): Promise<void> {
+    const id = pendingStartIdRef.current ?? addPendingUtterance(); // fallback if onSpeechStart was missed
+    pendingStartIdRef.current = null;
     if (liveQueue.current.length > 8) {
       const dropped = liveQueue.current.shift(); // bound the backlog
       if (dropped) dropPendingUtterance(dropped.id);
     }
-    const id = addPendingUtterance();
     liveQueue.current.push({ id, clip });
     if (!liveDraining.current) {
       liveDraining.current = true;
@@ -323,6 +330,15 @@ export default function App() {
     live: liveMode,
     thresholdDb: settings.autoSpeechThresholdDb,
     onSegment: liveMode ? enqueueLive : handleAutoSegment,
+    onSpeechStart: () => {
+      pendingStartIdRef.current = addPendingUtterance(); // show "…" immediately, before the segment even finishes
+    },
+    onSpeechAbandon: () => {
+      if (pendingStartIdRef.current) {
+        dropPendingUtterance(pendingStartIdRef.current);
+        pendingStartIdRef.current = null;
+      }
+    },
     onError: (m) => {
       showError(m);
       if (/permission/i.test(m)) update({ conversationMode: 'tap' });
@@ -338,6 +354,10 @@ export default function App() {
       } catch {
         /* ignore */
       }
+    }
+    if (pendingStartIdRef.current) {
+      dropPendingUtterance(pendingStartIdRef.current); // drop a capture-in-progress bubble too
+      pendingStartIdRef.current = null;
     }
     liveQueue.current.forEach((q) => dropPendingUtterance(q.id)); // drop any still-waiting "…" bubbles
     liveQueue.current = [];
