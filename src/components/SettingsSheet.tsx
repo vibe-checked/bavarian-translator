@@ -400,7 +400,14 @@ function ModelRow({
       style={[styles.voiceRow, active ? styles.voiceRowActive : null, cooled ? styles.rowDisabled : null]}
     >
       <View style={styles.modelLeft}>
-        <Text style={[styles.voiceText, active ? styles.voiceTextActive : null]}>{model.label}</Text>
+        <Text
+          style={[styles.voiceText, active ? styles.voiceTextActive : null]}
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.82}
+        >
+          {model.label}
+        </Text>
         {cooled ? (
           <Text style={[styles.modelQuota, styles.modelQuotaCooled]}>
             ⏳ Rate-limited · tap to retry now (auto in {fmtRemaining(remainingMs ?? 0)})
@@ -524,7 +531,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
   },
   gaugeNum: { fontSize: 13, fontWeight: '800', minWidth: 22, textAlign: 'right' },
-  modelLeft: { flexShrink: 1, paddingRight: 8 },
+  modelLeft: { flex: 1, paddingRight: 8 },
   modelQuota: { fontSize: 12, color: '#777', marginTop: 2 },
   modelQuotaCooled: { color: '#8A4B00', fontWeight: '700' },
   rowDisabled: { opacity: 0.5 },
