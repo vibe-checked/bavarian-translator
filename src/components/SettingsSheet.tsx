@@ -196,14 +196,9 @@ export function SettingsSheet(props: Props) {
 
             <Text style={styles.subhead}>Hands-free modes (always listening)</Text>
             <Text style={styles.help}>
-              Switch modes with the control on the main screen:{'\n'}
-              • 👆 Tap — press a mic per turn (most reliable).{'\n'}
-              • 🔁 Auto — turn-based and hands-free; waits for you to finish, then translates and
-              speaks it aloud (pauses while speaking, so it never hears itself). Best for back-and-forth
-              with Oma.{'\n'}
-              • 🔴 Live — streams the translated text as you speak, cutting on short pauses, without
-              waiting for you to finish. Text only (no speaking aloud — that would echo into the mic).
-              Best for following a longer story.
+              Switch modes with the control on the main screen. Not sure which to pick? Tap the{' '}
+              <Text style={styles.helpStrong}>?</Text> next to the mode switcher there for a quick
+              comparison.
             </Text>
             <Text style={styles.help}>
               Sensitivity (Auto + Live) — how loud counts as speech. If it cuts you off or misses a
@@ -512,6 +507,7 @@ const styles = StyleSheet.create({
   section: { backgroundColor: '#fff', borderRadius: 14, padding: 14, gap: 10 },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: '#222' },
   help: { fontSize: 13, color: '#666', lineHeight: 18 },
+  helpStrong: { fontWeight: '800', color: '#333' },
   input: {
     borderWidth: 1,
     borderColor: '#D0D0D5',
