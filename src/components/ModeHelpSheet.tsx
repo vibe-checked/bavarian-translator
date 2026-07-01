@@ -35,10 +35,13 @@ export function ModeHelpSheet(props: Props) {
         {/* Swallow taps on the card itself so they don't bubble to the backdrop's onPress. */}
         <Pressable onPress={() => {}}>
           <View style={styles.card}>
-            <Text style={styles.eyebrow}>WHICH MODE?</Text>
-            <Text style={styles.title}>Pick how you want to talk</Text>
+            {/* Everything above the button scrolls together as one region, so on a
+                small screen or large Dynamic Type it scrolls instead of clipping —
+                the "Got it" button stays pinned and always reachable either way. */}
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
+              <Text style={styles.eyebrow}>WHICH MODE?</Text>
+              <Text style={styles.title}>Pick how you want to talk</Text>
 
-            <ScrollView style={styles.list} showsVerticalScrollIndicator={false}>
               {MODES.map((m) => (
                 <View key={m.name} style={styles.row}>
                   <Text style={styles.icon}>{m.icon}</Text>
@@ -52,9 +55,9 @@ export function ModeHelpSheet(props: Props) {
                   </View>
                 </View>
               ))}
-            </ScrollView>
 
-            <Text style={styles.tip}>💡 Not sure? Start with Auto for a normal conversation.</Text>
+              <Text style={styles.tip}>💡 Not sure? Start with Auto for a normal conversation.</Text>
+            </ScrollView>
 
             <Pressable onPress={props.onClose} style={styles.doneBtn}>
               <Text style={styles.doneText}>Got it</Text>
@@ -77,14 +80,15 @@ const styles = StyleSheet.create({
   card: {
     backgroundColor: '#fff',
     borderRadius: 20,
-    padding: 22,
+    paddingHorizontal: 22,
+    paddingTop: 22,
     width: '100%',
     maxWidth: 420,
-    maxHeight: '80%',
+    maxHeight: '85%',
   },
+  scrollContent: { paddingBottom: 14 },
   eyebrow: { fontSize: 11, letterSpacing: 2, fontWeight: '800', color: '#888', marginBottom: 4 },
   title: { fontSize: 20, fontWeight: '800', color: '#111', marginBottom: 16 },
-  list: { marginBottom: 14 },
   row: { flexDirection: 'row', gap: 12, marginBottom: 16 },
   icon: { fontSize: 24, width: 30, textAlign: 'center' },
   rowText: { flex: 1 },
@@ -106,6 +110,7 @@ const styles = StyleSheet.create({
     borderRadius: 999,
     paddingVertical: 12,
     alignItems: 'center',
+    marginBottom: 22,
   },
   doneText: { color: '#fff', fontWeight: '800', fontSize: 15 },
 });
