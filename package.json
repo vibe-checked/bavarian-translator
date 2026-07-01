@@ -3,10 +3,12 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@expo/app-integrity": "^57.0.0",
     "@react-native-async-storage/async-storage": "2.2.0",
     "expo": "~56.0.9",
     "expo-asset": "~56.0.16",
     "expo-audio": "~56.0.11",
+    "expo-crypto": "~56.0.4",
     "expo-file-system": "~56.0.7",
     "expo-speech": "~56.0.3",
     "expo-splash-screen": "~56.0.10",

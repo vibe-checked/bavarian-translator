@@ -17,6 +17,9 @@
           "audio"
         ],
         "ITSAppUsesNonExemptEncryption": false
+      },
+      "entitlements": {
+        "com.apple.developer.devicecheck.appattest-environment": "production"
       }
     },
     "android": {

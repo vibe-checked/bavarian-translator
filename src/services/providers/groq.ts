@@ -9,6 +9,7 @@ import {
   isLikelyNonSpeech,
 } from './prompt';
 import { endpointFor } from './proxy';
+import { attestHeaders } from '../attest';
 
 // Groq does speech in two steps: Whisper transcription, then an LLM translates.
 // Each call resolves to the proxy or the provider directly (USE_PROXY flag).
@@ -43,9 +44,10 @@ async function transcribe(input: TranslateInput): Promise<string> {
     form.append('prompt', 'Gesprochenes Bairisch bzw. Hochdeutsch.');
   }
 
+  const attest = await attestHeaders(input.base64); // bound to the audio being sent this call
   const res = await fetch(TRANSCRIBE.url, {
     method: 'POST',
-    headers: { ...TRANSCRIBE.headers },
+    headers: { ...TRANSCRIBE.headers, ...attest },
     body: form,
     signal: input.signal,
   });
@@ -66,9 +68,10 @@ async function translate(input: TranslateInput): Promise<TranslateResult> {
   const transcript = await transcribe(input);
   if (isLikelyNonSpeech(transcript)) return { detected: 'other', bavarian: false, de: '', en: '' };
 
+  const chatAttest = await attestHeaders(transcript); // bound to the transcript being sent this call
   const res = await fetch(CHAT.url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...CHAT.headers },
+    headers: { 'Content-Type': 'application/json', ...CHAT.headers, ...chatAttest },
     body: JSON.stringify({
       model: input.model,
       temperature: 0.2,

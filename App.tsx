@@ -15,6 +15,7 @@ import { useAutoListener } from './src/hooks/useAutoListener';
 import { useKeepScreenAwake } from './src/hooks/useKeepScreenAwake';
 import { translateAudio, type TranslateOutcome } from './src/services/providers';
 import { speak, speakAsync, stopSpeaking, loadVoices, type VoiceInfo } from './src/services/tts';
+import { ensureEnrolled } from './src/services/attest';
 import { Pane } from './src/components/Pane';
 import { SettingsSheet } from './src/components/SettingsSheet';
 import { ModeHelpSheet } from './src/components/ModeHelpSheet';
@@ -61,6 +62,7 @@ export default function App() {
 
   useEffect(() => {
     loadVoices().then(setVoices).catch(() => {});
+    ensureEnrolled(); // best-effort App Attest enrollment; no-op on Simulator or if it fails
   }, []);
 
   function addUtterance(

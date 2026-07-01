@@ -2,6 +2,7 @@ import type { TranslateResult } from '../../types';
 import type { TranslateInput, TranslationProvider } from './types';
 import { audioInstruction, parseResult, httpError, retryAfterSeconds, isLikelyNonSpeech } from './prompt';
 import { endpointFor } from './proxy';
+import { attestHeaders } from '../attest';
 
 // Gemini uses its own (uppercase) schema dialect.
 const GEMINI_SCHEMA = {
@@ -42,9 +43,10 @@ async function translate(input: TranslateInput): Promise<TranslateResult> {
       directUrl: `https://generativelanguage.googleapis.com/v1beta/models/${input.model}:generateContent`,
       directKeyInUrl: true,
     });
+    const attest = await attestHeaders(input.base64); // bound to the audio being sent this call
     res = await fetch(ep.url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', ...ep.headers },
+      headers: { 'Content-Type': 'application/json', ...ep.headers, ...attest },
       body: JSON.stringify(body),
       signal: input.signal,
     });

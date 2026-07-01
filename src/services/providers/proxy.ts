@@ -17,7 +17,12 @@ export const USING_PROXY = USE_PROXY;
 
 const RAW_BASE = process.env.EXPO_PUBLIC_PROXY_URL || 'https://bavarian-api.vibecode.review/api/proxy';
 const PROXY_BASE = RAW_BASE.replace(/\/+$/, '');
-const APP_KEY = process.env.EXPO_PUBLIC_APP_KEY || '';
+export const APP_KEY = process.env.EXPO_PUBLIC_APP_KEY || '';
+
+/** Origin the proxy lives on, e.g. https://bavarian-api.vibecode.review — for
+ *  hitting sibling endpoints (App Attest enrollment) that aren't the ?route=
+ *  proxy itself. */
+export const API_ORIGIN = PROXY_BASE.replace(/\/api\/proxy$/, '');
 
 // Direct-mode keys — only present (and only baked into the bundle) when you
 // build with EXPO_PUBLIC_USE_PROXY=0 and supply them in .env.
