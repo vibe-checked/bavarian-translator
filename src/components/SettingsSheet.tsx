@@ -194,15 +194,10 @@ export function SettingsSheet(props: Props) {
               nothing spoken back), so your own talking doesn’t clutter the screen or use quota.
             </Text>
 
-            <Text style={styles.subhead}>Hands-free modes (always listening)</Text>
+            <Text style={styles.subhead}>Sensitivity (Auto + Live)</Text>
             <Text style={styles.help}>
-              Switch modes with the control on the main screen. Not sure which to pick? Tap the{' '}
-              <Text style={styles.helpStrong}>?</Text> next to the mode switcher there for a quick
-              comparison.
-            </Text>
-            <Text style={styles.help}>
-              Sensitivity (Auto + Live) — how loud counts as speech. If it cuts you off or misses a
-              quiet talker, pick Sensitive; if it triggers on background noise, pick Strict.
+              How loud counts as speech. If it cuts you off or misses a quiet talker, pick Sensitive;
+              if it triggers on background noise, pick Strict.
             </Text>
             <View style={styles.chips}>
               {SENSITIVITY.map((s) => (
@@ -507,7 +502,6 @@ const styles = StyleSheet.create({
   section: { backgroundColor: '#fff', borderRadius: 14, padding: 14, gap: 10 },
   sectionTitle: { fontSize: 16, fontWeight: '800', color: '#222' },
   help: { fontSize: 13, color: '#666', lineHeight: 18 },
-  helpStrong: { fontWeight: '800', color: '#333' },
   input: {
     borderWidth: 1,
     borderColor: '#D0D0D5',
