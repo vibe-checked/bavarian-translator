@@ -175,24 +175,16 @@ export function SettingsSheet(props: Props) {
             />
             <ToggleRow
               label="Face-to-face mode"
+              subtitle="Flips the top (German) half upside-down so Oma can read it sitting across the table from you."
               value={settings.faceToFace}
               onValueChange={(v) => update({ faceToFace: v })}
             />
-            <Text style={styles.help}>
-              Face-to-face flips the top (German) half upside-down so Oma can read it sitting across
-              the table from you.
-            </Text>
-
             <ToggleRow
               label="German only (ignore English)"
+              subtitle="One-way “listen to Oma” mode: only German speech is translated (shown up top, with the English translation below); the English side is ignored — no bubble, nothing spoken back."
               value={settings.germanOnly}
               onValueChange={(v) => update({ germanOnly: v })}
             />
-            <Text style={styles.help}>
-              One-way “listen to Oma” mode: only German speech is translated — you’ll see what she
-              said up top and the English translation below. The English side is ignored (no bubble,
-              nothing spoken back), so your own talking doesn’t clutter the screen or use quota.
-            </Text>
 
             <Text style={styles.subhead}>Sensitivity (Auto + Live)</Text>
             <Text style={styles.help}>
@@ -212,15 +204,10 @@ export function SettingsSheet(props: Props) {
 
             <ToggleRow
               label="Keep listening in the background"
+              subtitle="Off by default. When on, Auto & Live keep listening after you switch apps or lock the screen — handy for a long conversation, but uses more battery."
               value={settings.backgroundListening}
               onValueChange={(v) => update({ backgroundListening: v })}
             />
-            <Text style={styles.help}>
-              Off by default. When on, Auto &amp; Live keep listening and translating even after you
-              switch apps or lock the screen — handy for a long conversation, but it keeps the mic and
-              network active, so it uses more battery. Turn it off to have listening pause whenever the
-              app isn’t in front.
-            </Text>
           </Section>
 
         </ScrollView>
