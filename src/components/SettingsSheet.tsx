@@ -186,11 +186,13 @@ export function SettingsSheet(props: Props) {
               onValueChange={(v) => update({ germanOnly: v })}
             />
 
-            <Text style={styles.rowLabel}>Sensitivity (Auto + Live)</Text>
-            <Text style={styles.help}>
-              How loud counts as speech. If it cuts you off or misses a quiet talker, pick Sensitive;
-              if it triggers on background noise, pick Strict.
-            </Text>
+            <View style={styles.rowLabelCol}>
+              <Text style={styles.rowLabel}>Sensitivity (Auto + Live)</Text>
+              <Text style={styles.rowSubtitle}>
+                How loud counts as speech. If it cuts you off or misses a quiet talker, pick
+                Sensitive; if it triggers on background noise, pick Strict.
+              </Text>
+            </View>
             <View style={styles.chips}>
               {SENSITIVITY.map((s) => (
                 <Chip
