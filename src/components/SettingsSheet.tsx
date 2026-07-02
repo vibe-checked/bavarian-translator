@@ -185,6 +185,12 @@ export function SettingsSheet(props: Props) {
               value={settings.germanOnly}
               onValueChange={(v) => update({ germanOnly: v })}
             />
+            <ToggleRow
+              label="Keep listening in the background"
+              subtitle="Off by default. When on, Auto & Live keep listening after you switch apps or lock the screen — handy for a long conversation, but uses more battery."
+              value={settings.backgroundListening}
+              onValueChange={(v) => update({ backgroundListening: v })}
+            />
 
             <View style={styles.rowLabelCol}>
               <Text style={styles.rowLabel}>Sensitivity (Auto + Live)</Text>
@@ -203,13 +209,6 @@ export function SettingsSheet(props: Props) {
                 />
               ))}
             </View>
-
-            <ToggleRow
-              label="Keep listening in the background"
-              subtitle="Off by default. When on, Auto & Live keep listening after you switch apps or lock the screen — handy for a long conversation, but uses more battery."
-              value={settings.backgroundListening}
-              onValueChange={(v) => update({ backgroundListening: v })}
-            />
           </Section>
 
         </ScrollView>
