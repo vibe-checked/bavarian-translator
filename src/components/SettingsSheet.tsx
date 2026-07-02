@@ -174,7 +174,7 @@ export function SettingsSheet(props: Props) {
               onValueChange={(v) => update({ autoSpeak: v })}
             />
             <ToggleRow
-              label="Face-to-face mode (flip German half)"
+              label="Face-to-face mode"
               value={settings.faceToFace}
               onValueChange={(v) => update({ faceToFace: v })}
             />
@@ -428,7 +428,9 @@ function ToggleRow({
   return (
     <View style={[styles.row, subtitle ? styles.rowAlignTop : null]}>
       <View style={styles.rowLabelCol}>
-        <Text style={styles.rowLabel}>{label}</Text>
+        <Text style={styles.rowLabel} numberOfLines={1}>
+          {label}
+        </Text>
         {subtitle ? <Text style={styles.rowSubtitle}>{subtitle}</Text> : null}
       </View>
       <Switch value={value} onValueChange={onValueChange} />
